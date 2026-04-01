@@ -16,28 +16,22 @@
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); color: var(--text); line-height: 1.4; font-size: 13px; }
-.container { max-width: 1500px; margin: 0 auto; padding: 20px 24px; }
+.container { max-width: 1600px; margin: 0 auto; padding: 20px 24px; }
 
-/* Header */
 header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
 h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
 h1 span { color: var(--accent2); }
 .header-meta { color: var(--muted); font-size: 12px; margin-top: 2px; }
 .header-right { display: flex; align-items: center; gap: 10px; }
 
-/* Division filter */
 .division-filter { display: flex; gap: 4px; background: var(--surface); border-radius: 10px; padding: 4px; }
 .div-btn { padding: 7px 16px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600; color: var(--muted); border: none; background: none; transition: all .2s; }
 .div-btn.active { background: var(--accent); color: #fff; }
 .div-btn:hover:not(.active) { color: var(--text); background: var(--surface2); }
 
-/* Action buttons */
 .action-btn { padding: 7px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; transition: all .2s; }
 .action-btn:hover { background: var(--surface2); border-color: var(--accent); }
-.action-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-.action-btn.primary:hover { background: var(--accent2); }
 
-/* Tabs */
 .tabs { display: flex; gap: 4px; background: var(--surface); border-radius: 10px; padding: 4px; margin-bottom: 20px; }
 .tab { padding: 8px 18px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--muted); transition: all .2s; border: none; background: none; }
 .tab.active { background: var(--accent); color: #fff; }
@@ -45,12 +39,10 @@ h1 span { color: var(--accent2); }
 .panel { display: none; }
 .panel.active { display: block; }
 
-/* Section headers */
 .section-hdr { display: flex; align-items: center; gap: 8px; margin: 20px 0 12px; }
 .section-hdr .dot { width: 8px; height: 8px; border-radius: 50%; }
 .section-hdr h2 { font-size: 15px; font-weight: 700; }
 
-/* Forecast table */
 .forecast-grid { display: grid; gap: 16px; margin-bottom: 20px; }
 .forecast-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
 .forecast-grid.cols-2 { grid-template-columns: 1fr 1fr; }
@@ -58,27 +50,21 @@ h1 span { color: var(--accent2); }
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
 .card-header { padding: 10px 14px; background: var(--surface2); border-bottom: 1px solid var(--border); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--accent2); }
 
-/* Tables inside cards */
-.ftable { width: 100%; border-collapse: collapse; }
-.ftable th { text-align: left; padding: 6px 10px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.ftable { width: 100%; border-collapse: collapse; table-layout: auto; }
+.ftable th { text-align: left; padding: 6px 8px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--border); white-space: nowrap; }
 .ftable th.num { text-align: right; }
-.ftable td { padding: 5px 10px; border-bottom: 1px solid rgba(46,51,72,0.5); font-variant-numeric: tabular-nums; }
+.ftable td { padding: 4px 6px; border-bottom: 1px solid rgba(46,51,72,0.5); font-variant-numeric: tabular-nums; }
 .ftable td.num { text-align: right; }
-.ftable td.label { font-weight: 600; white-space: nowrap; min-width: 70px; }
+.ftable td.label { font-weight: 600; white-space: nowrap; min-width: 55px; }
 .ftable tr.total-row td { font-weight: 700; border-top: 2px solid var(--border); background: rgba(99,102,241,0.05); }
 .ftable tr.wholesale-row td { font-size: 11px; color: var(--muted); }
 .ftable tr:hover td { background: rgba(99,102,241,0.03); }
 
-/* Editable inputs */
-.edit-cell { background: transparent; border: 1px solid transparent; color: var(--text); font-size: 13px; font-family: inherit; font-variant-numeric: tabular-nums; padding: 3px 6px; border-radius: 4px; width: 100%; text-align: right; transition: border-color .2s, background .2s; }
+.edit-cell { background: transparent; border: 1px solid transparent; color: var(--text); font-size: 12px; font-family: inherit; font-variant-numeric: tabular-nums; padding: 2px 4px; border-radius: 4px; width: 100%; text-align: right; transition: border-color .2s, background .2s; min-width: 60px; }
 .edit-cell:hover { border-color: var(--border); }
 .edit-cell:focus { border-color: var(--accent); outline: none; background: var(--surface2); }
 .edit-cell.text-left { text-align: left; }
-.edit-cell[readonly] { color: var(--muted); cursor: default; }
-.edit-cell[readonly]:hover { border-color: transparent; }
-.edit-cell[readonly]:focus { border-color: transparent; background: transparent; }
 
-/* Sales leader editable fields — gold accent */
 .edit-cell.leader-field {
   background: var(--leader-bg);
   border: 1px solid var(--leader-border);
@@ -91,13 +77,11 @@ h1 span { color: var(--accent2); }
 }
 .edit-cell.leader-field::placeholder { color: rgba(234, 179, 8, 0.45); }
 
-/* Calculated (formula) cells */
-.calc-val { font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.calc-val { font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; font-size: 12px; }
 .calc-val.positive { color: var(--green); }
 .calc-val.negative { color: var(--red); }
 .calc-val.warning { color: var(--yellow); }
 
-/* Big Deals table */
 .deals-table { width: 100%; border-collapse: collapse; font-size: 12px; }
 .deals-table th { text-align: left; padding: 8px 10px; border-bottom: 2px solid var(--border); color: var(--muted); font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; position: sticky; top: 0; background: var(--surface); white-space: nowrap; }
 .deals-table td { padding: 7px 10px; border-bottom: 1px solid var(--border); }
@@ -108,15 +92,12 @@ h1 span { color: var(--accent2); }
 .scroll-wrap::-webkit-scrollbar-track { background: var(--surface); }
 .scroll-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
-/* Status bar */
 .status-bar { display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 16px; font-size: 12px; color: var(--muted); }
 .status-bar .week-info { font-weight: 700; color: var(--accent2); }
 
-/* Leader field legend */
 .leader-legend { display: inline-flex; align-items: center; gap: 6px; margin-left: 16px; font-size: 11px; color: var(--muted); }
 .leader-legend .swatch { width: 14px; height: 10px; border-radius: 3px; background: var(--leader-bg); border: 1px solid var(--leader-border); }
 
-/* Print styles */
 @media print {
   body { background: #fff; color: #000; font-size: 10px; }
   .container { max-width: 100%; padding: 10px; }
@@ -170,30 +151,22 @@ h1 span { color: var(--accent2); }
     <button class="tab" onclick="showTab('bigdeals',this)">Big Deals</button>
   </div>
 
-  <!-- ===== FORECAST PANEL ===== -->
   <div id="forecast" class="panel active">
-
-    <!-- BOOKINGS SECTION -->
     <div class="section-hdr"><div class="dot" style="background:var(--accent)"></div><h2>Bookings</h2></div>
     <div class="forecast-grid cols-3" id="bookingsGrid"></div>
 
-    <!-- CONTRACTS SECTION -->
     <div class="section-hdr"><div class="dot" style="background:var(--green)"></div><h2>Contracts</h2></div>
     <div class="forecast-grid cols-3" id="contractsGrid"></div>
 
-    <!-- APRC SECTION -->
     <div class="section-hdr"><div class="dot" style="background:var(--cyan)"></div><h2>APRC &amp; Win Rate</h2></div>
     <div class="forecast-grid cols-2" id="aprcGrid"></div>
 
-    <!-- PIPELINE SECTION -->
     <div class="section-hdr"><div class="dot" style="background:var(--yellow)"></div><h2>Pipeline</h2></div>
     <div class="forecast-grid cols-3" id="pipelineGrid"></div>
-
   </div>
 
-  <!-- ===== BIG DEALS PANEL ===== -->
   <div id="bigdeals" class="panel">
-    <div class="section-hdr"><div class="dot" style="background:var(--red)"></div><h2>Big Deals — Open Sol+ Opportunities &gt; $25K</h2></div>
+    <div class="section-hdr"><div class="dot" style="background:var(--red)"></div><h2>Big Deals — Open Sol+ Opportunities &gt; $25K (Q3 Close)</h2></div>
     <div class="card">
       <div class="scroll-wrap" id="bigDealsWrap"></div>
     </div>
@@ -201,27 +174,12 @@ h1 span { color: var(--accent2); }
 </div>
 
 <script>
-// ---------------------------------------------------------------------------
-// State
-// ---------------------------------------------------------------------------
 let DATA = null;
 let DIVISION = 'Total';
 let EDITS = {};
 const STORAGE_KEY = 'mm_forecast_edits';
 const DIVISIONS = ['Total','KAM','East','West','Channel'];
 
-const DIVISION_MAP = {
-  'MM Account Managers L3': 'KAM',
-  'MM Channel Sales L3': 'Channel',
-  'MM East AE L3': 'East',
-  'MM East Sr. AE L3': 'East',
-  'MM West AE L3': 'West',
-  'MM West Sr. AE L3': 'West'
-};
-
-// ---------------------------------------------------------------------------
-// Init
-// ---------------------------------------------------------------------------
 async function init() {
   loadEdits();
   DATA = window.__FORECAST_DATA || null;
@@ -229,11 +187,11 @@ async function init() {
     try {
       const resp = await fetch('forecast_data.json');
       if (resp.ok) DATA = await resp.json();
-    } catch(e) { /* file:// or network error */ }
+    } catch(e) {}
   }
   if (!DATA) {
     DATA = buildEmptyData();
-    console.info('No forecast_data.json loaded. If opening locally, serve via: python3 -m http.server 8000');
+    console.info('No forecast_data.json loaded. Serve via: python3 -m http.server 8000');
   }
   updateHeader();
   renderAll();
@@ -267,9 +225,6 @@ function updateHeader() {
   document.getElementById('weeksRemaining').textContent = d.weeks_remaining_q3 || '--';
 }
 
-// ---------------------------------------------------------------------------
-// Division filter
-// ---------------------------------------------------------------------------
 document.getElementById('divFilter').addEventListener('click', e => {
   if (!e.target.classList.contains('div-btn')) return;
   document.querySelectorAll('.div-btn').forEach(b => b.classList.remove('active'));
@@ -278,9 +233,6 @@ document.getElementById('divFilter').addEventListener('click', e => {
   renderAll();
 });
 
-// ---------------------------------------------------------------------------
-// Tab switching
-// ---------------------------------------------------------------------------
 function showTab(id, btn) {
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -288,13 +240,9 @@ function showTab(id, btn) {
   btn.classList.add('active');
 }
 
-// ---------------------------------------------------------------------------
-// Formatting helpers
-// ---------------------------------------------------------------------------
 function fmtDollar(v) {
   if (v == null || v === '' || isNaN(v)) return '';
-  const n = Number(v);
-  return '$' + n.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0});
+  return '$' + Number(v).toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0});
 }
 function fmtPct(v) {
   if (v == null || v === '' || isNaN(v)) return '';
@@ -314,14 +262,11 @@ function parseNum(s) {
 }
 function pctClass(v) {
   if (v == null || isNaN(v)) return '';
-  if (v >= 0.9) return 'positive';
-  if (v >= 0.7) return 'warning';
+  if (v >= 1.0) return 'positive';
+  if (v >= 0.95) return 'warning';
   return 'negative';
 }
 
-// ---------------------------------------------------------------------------
-// Edit state management
-// ---------------------------------------------------------------------------
 function editKey(section, division, row, col) {
   return `${section}|${division}|${row}|${col}`;
 }
@@ -333,12 +278,8 @@ function setEdit(section, row, col, value) {
   saveEdits();
   renderAll();
 }
-function saveEdits() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(EDITS));
-}
-function loadEdits() {
-  try { EDITS = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch(e) { EDITS = {}; }
-}
+function saveEdits() { localStorage.setItem(STORAGE_KEY, JSON.stringify(EDITS)); }
+function loadEdits() { try { EDITS = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch(e) { EDITS = {}; } }
 
 function editInput(section, row, col, opts = {}) {
   const val = getEdit(section, row, col);
@@ -346,12 +287,13 @@ function editInput(section, row, col, opts = {}) {
   let cls = opts.textLeft ? 'edit-cell text-left' : 'edit-cell';
   if (isLeader) cls += ' leader-field';
   const ph = opts.placeholder || '';
-  return `<input class="${cls}" value="${escHtml(val)}" placeholder="${ph}"
+  const prefill = (val === '' && opts.prefill != null) ? opts.prefill : val;
+  return `<input class="${cls}" value="${escHtml(prefill)}" placeholder="${ph}"
     onchange="setEdit('${section}','${row}','${col}',this.value)"
     onfocus="this.select()">`;
 }
 
-function readonlyVal(val, fmt) {
+function calcDisplay(val, fmt) {
   if (fmt === '$') return `<span class="calc-val">${fmtDollar(val)}</span>`;
   if (fmt === '%') {
     const cls = pctClass(val);
@@ -366,205 +308,119 @@ function escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-// ---------------------------------------------------------------------------
-// Data accessors
-// ---------------------------------------------------------------------------
-function getActuals(period, metric) {
-  const a = DATA?.actuals?.[DIVISION]?.[period];
-  if (!a) return 0;
-  return a[metric] || 0;
-}
-function getPlan(period, metric) {
-  const p = DATA?.plan_weekly?.[DIVISION]?.[period];
-  if (!p) return 0;
-  return p[metric] || 0;
-}
-function getTarget(metric) {
-  const t = DATA?.targets?.[DIVISION]?.[metric];
-  if (!t) return 0;
-  return parseDollar(t);
-}
-function getTargetRaw(metric) {
-  return DATA?.targets?.[DIVISION]?.[metric] || '';
-}
+function getActuals(period, metric) { return DATA?.actuals?.[DIVISION]?.[period]?.[metric] || 0; }
+function getPlan(period, metric) { return DATA?.plan_weekly?.[DIVISION]?.[period]?.[metric] || 0; }
+function getTarget(metric) { return parseDollar(DATA?.targets?.[DIVISION]?.[metric]); }
+function getTargetRaw(metric) { return DATA?.targets?.[DIVISION]?.[metric] || ''; }
 
-// ---------------------------------------------------------------------------
-// Render: Bookings
-// ---------------------------------------------------------------------------
+// =========================================================================
+// BOOKINGS
+// =========================================================================
 function renderBookings() {
   const grid = document.getElementById('bookingsGrid');
   const pw = DATA.prior_week_544 || 35;
   const cw = DATA.current_week_544 || 36;
 
-  // --- Prior Week ---
-  const priorPlanIES = getPlan('prior_week','ies_revenue');
-  const priorPlanNon = getPlan('prior_week','nonies_revenue');
-  const priorPlanTot = priorPlanIES + priorPlanNon;
-  const priorBilledIES = getActuals('prior_week','ies_revenue');
-  const priorBilledNon = getActuals('prior_week','nonies_revenue');
-  const priorBilledTot = priorBilledIES + priorBilledNon;
-  const priorSignedIES = parseDollar(getEdit('bk','ies','pw_signed'));
-  const priorSignedNon = parseDollar(getEdit('bk','nonies','pw_signed'));
-  const priorSignedTot = priorSignedIES + priorSignedNon;
-  const priorCommitIES = parseDollar(getEdit('bk','ies','pw_commit'));
-  const priorCommitNon = parseDollar(getEdit('bk','nonies','pw_commit'));
-  const priorCommitTot = priorCommitIES + priorCommitNon;
-  const billedItpIES = priorPlanIES ? priorBilledIES / priorPlanIES : null;
-  const billedItpNon = priorPlanNon ? priorBilledNon / priorPlanNon : null;
-  const billedItpTot = priorPlanTot ? priorBilledTot / priorPlanTot : null;
-  const itfIES = priorCommitIES ? priorBilledIES / priorCommitIES : null;
-  const itfNon = priorCommitNon ? priorBilledNon / priorCommitNon : null;
-  const itfTot = priorCommitTot ? priorBilledTot / priorCommitTot : null;
-  const signedItpIES = priorPlanIES ? priorSignedIES / priorPlanIES : null;
-  const signedItpNon = priorPlanNon ? priorSignedNon / priorPlanNon : null;
-  const signedItpTot = priorPlanTot ? priorSignedTot / priorPlanTot : null;
-
-  function bkRow(label, plan, billed, signed, commit, billedItp, itf, signedItp, isTotal, rowKey) {
-    const cls = isTotal ? ' class="total-row"' : '';
-    if (isTotal) {
-      return `<tr${cls}>
-        <td class="label">${label}</td>
-        <td class="num">${readonlyVal(plan,'$')}</td>
-        <td class="num">${readonlyVal(billed,'$')}</td>
-        <td class="num">${readonlyVal(signed,'$')}</td>
-        <td class="num">${readonlyVal(commit,'$')}</td>
-        <td class="num">${readonlyVal(billedItp,'%')}</td>
-        <td class="num">${readonlyVal(itf,'%')}</td>
-        <td class="num">${readonlyVal(signedItp,'%')}</td>
-      </tr>`;
-    }
+  // Prior Week — all editable, plan/billed prefilled from data
+  function pwRow(label, rk, planVal, billedVal) {
+    const plan = parseDollar(getEdit('bk',rk,'pw_plan') || planVal);
+    const billed = parseDollar(getEdit('bk',rk,'pw_billed') || billedVal);
+    const signed = parseDollar(getEdit('bk',rk,'pw_signed'));
+    const commit = parseDollar(getEdit('bk',rk,'pw_commit'));
+    const billedItp = plan ? billed / plan : null;
+    const itf = commit ? billed / commit : null;
+    const signedItp = plan ? signed / plan : null;
     return `<tr>
       <td class="label">${label}</td>
-      <td class="num">${readonlyVal(plan,'$')}</td>
-      <td class="num">${readonlyVal(billed,'$')}</td>
-      <td class="num">${editInput('bk',rowKey,'pw_signed',{placeholder:'$0'})}</td>
-      <td class="num">${editInput('bk',rowKey,'pw_commit',{placeholder:'$0'})}</td>
-      <td class="num">${readonlyVal(billedItp,'%')}</td>
-      <td class="num">${readonlyVal(itf,'%')}</td>
-      <td class="num">${readonlyVal(signedItp,'%')}</td>
+      <td class="num">${editInput('bk',rk,'pw_plan',{placeholder:'$0',prefill:fmtDollar(planVal)})}</td>
+      <td class="num">${editInput('bk',rk,'pw_billed',{placeholder:'$0',prefill:fmtDollar(billedVal)})}</td>
+      <td class="num">${editInput('bk',rk,'pw_signed',{placeholder:'$0'})}</td>
+      <td class="num">${editInput('bk',rk,'pw_commit',{placeholder:'$0'})}</td>
+      <td class="num">${calcDisplay(billedItp,'%')}</td>
+      <td class="num">${calcDisplay(itf,'%')}</td>
+      <td class="num">${calcDisplay(signedItp,'%')}</td>
     </tr>`;
   }
 
   const priorCard = `<div class="card"><div class="card-header">Prior Week (W${pw})</div>
     <table class="ftable"><thead><tr>
-      <th>Bookings</th><th class="num">Plan</th><th class="num">Billed Actuals</th>
-      <th class="num">Signed Actuals</th><th class="num">Commit</th>
+      <th></th><th class="num">Plan</th><th class="num">Billed</th>
+      <th class="num">Signed</th><th class="num">Commit</th>
       <th class="num">Billed ITP</th><th class="num">ITF</th><th class="num">Signed ITP</th>
     </tr></thead><tbody>
-      ${bkRow('IES',priorPlanIES,priorBilledIES,priorSignedIES,priorCommitIES,billedItpIES,itfIES,signedItpIES,false,'ies')}
-      ${bkRow('Non-IES',priorPlanNon,priorBilledNon,priorSignedNon,priorCommitNon,billedItpNon,itfNon,signedItpNon,false,'nonies')}
-      ${bkRow('Total',priorPlanTot,priorBilledTot,priorSignedTot,priorCommitTot,billedItpTot,itfTot,signedItpTot,true,'total')}
-      <tr class="wholesale-row"><td class="label">Wholesale</td><td colspan="7">${editInput('bk','wholesale','pw_note',{placeholder:'e.g. 3 units for $14,400',textLeft:true})}</td></tr>
+      ${pwRow('IES','ies',getPlan('prior_week','ies_revenue'),getActuals('prior_week','ies_revenue'))}
+      ${pwRow('Non-IES','nonies',getPlan('prior_week','nonies_revenue'),getActuals('prior_week','nonies_revenue'))}
     </tbody></table></div>`;
 
-  // --- This Week (leader fields: commit, high, low) ---
-  const twPlanIES = getPlan('this_week','ies_revenue');
-  const twPlanNon = getPlan('this_week','nonies_revenue');
-  const twPlanTot = twPlanIES + twPlanNon;
-  const twCommitIES = parseDollar(getEdit('bk','ies','tw_commit'));
-  const twCommitNon = parseDollar(getEdit('bk','nonies','tw_commit'));
-  const twCommitTot = twCommitIES + twCommitNon;
-  const twHighIES = parseDollar(getEdit('bk','ies','tw_high'));
-  const twHighNon = parseDollar(getEdit('bk','nonies','tw_high'));
-  const twHighTot = twHighIES + twHighNon;
-  const twLowIES = parseDollar(getEdit('bk','ies','tw_low'));
-  const twLowNon = parseDollar(getEdit('bk','nonies','tw_low'));
-  const twLowTot = twLowIES + twLowNon;
-  const twItpIES = twPlanIES ? twCommitIES / twPlanIES : null;
-  const twItpNon = twPlanNon ? twCommitNon / twPlanNon : null;
-  const twItpTot = twPlanTot ? twCommitTot / twPlanTot : null;
-
-  function twRow(label, plan, commit, high, low, itp, isTotal, rowKey) {
-    const cls = isTotal ? ' class="total-row"' : '';
-    if (isTotal) {
-      return `<tr${cls}>
-        <td class="label">${label}</td><td class="num">${readonlyVal(plan,'$')}</td>
-        <td class="num">${readonlyVal(commit,'$')}</td><td class="num">${readonlyVal(high,'$')}</td>
-        <td class="num">${readonlyVal(low,'$')}</td><td class="num">${readonlyVal(itp,'%')}</td>
-      </tr>`;
-    }
+  // This Week — commit/high/low are leader fields
+  function twRow(label, rk, planVal) {
+    const plan = parseDollar(getEdit('bk',rk,'tw_plan') || planVal);
+    const commit = parseDollar(getEdit('bk',rk,'tw_commit'));
+    const high = parseDollar(getEdit('bk',rk,'tw_high'));
+    const low = parseDollar(getEdit('bk',rk,'tw_low'));
+    const itp = plan ? commit / plan : null;
     return `<tr>
-      <td class="label">${label}</td><td class="num">${readonlyVal(plan,'$')}</td>
-      <td class="num">${editInput('bk',rowKey,'tw_commit',{placeholder:'$0',leader:true})}</td>
-      <td class="num">${editInput('bk',rowKey,'tw_high',{placeholder:'$0',leader:true})}</td>
-      <td class="num">${editInput('bk',rowKey,'tw_low',{placeholder:'$0',leader:true})}</td>
-      <td class="num">${readonlyVal(itp,'%')}</td>
+      <td class="label">${label}</td>
+      <td class="num">${editInput('bk',rk,'tw_plan',{placeholder:'$0',prefill:fmtDollar(planVal)})}</td>
+      <td class="num">${editInput('bk',rk,'tw_commit',{placeholder:'$0',leader:true})}</td>
+      <td class="num">${editInput('bk',rk,'tw_high',{placeholder:'$0',leader:true})}</td>
+      <td class="num">${editInput('bk',rk,'tw_low',{placeholder:'$0',leader:true})}</td>
+      <td class="num">${calcDisplay(itp,'%')}</td>
     </tr>`;
   }
 
   const thisCard = `<div class="card"><div class="card-header">This Week (W${cw})</div>
     <table class="ftable"><thead><tr>
-      <th>Bookings</th><th class="num">Plan</th><th class="num">Commit</th>
+      <th></th><th class="num">Plan</th><th class="num">Commit</th>
       <th class="num">High</th><th class="num">Low</th><th class="num">Commit ITP</th>
     </tr></thead><tbody>
-      ${twRow('IES',twPlanIES,twCommitIES,twHighIES,twLowIES,twItpIES,false,'ies')}
-      ${twRow('Non-IES',twPlanNon,twCommitNon,twHighNon,twLowNon,twItpNon,false,'nonies')}
-      ${twRow('Total',twPlanTot,twCommitTot,twHighTot,twLowTot,twItpTot,true,'total')}
+      ${twRow('IES','ies',getPlan('this_week','ies_revenue'))}
+      ${twRow('Non-IES','nonies',getPlan('this_week','nonies_revenue'))}
     </tbody></table></div>`;
 
-  // --- Q3 (leader fields: commit, high, low) ---
-  const q3PlanIES = getTarget('IES Revenue');
-  const q3PlanNon = getTarget('Non-IES Revenue');
-  const q3PlanTot = getTarget('Total Revenue');
-  const q3ActIES = getActuals('qtd','ies_revenue');
-  const q3ActNon = getActuals('qtd','nonies_revenue');
-  const q3ActTot = q3ActIES + q3ActNon;
-  const q3CommitIES = parseDollar(getEdit('bk','ies','q3_commit'));
-  const q3CommitNon = parseDollar(getEdit('bk','nonies','q3_commit'));
-  const q3CommitTot = q3CommitIES + q3CommitNon;
-  const q3HighIES = parseDollar(getEdit('bk','ies','q3_high'));
-  const q3HighNon = parseDollar(getEdit('bk','nonies','q3_high'));
-  const q3HighTot = q3HighIES + q3HighNon;
-  const q3LowIES = parseDollar(getEdit('bk','ies','q3_low'));
-  const q3LowNon = parseDollar(getEdit('bk','nonies','q3_low'));
-  const q3LowTot = q3LowIES + q3LowNon;
-  const q3ItpIES = q3PlanIES ? q3CommitIES / q3PlanIES : null;
-  const q3ItpNon = q3PlanNon ? q3CommitNon / q3PlanNon : null;
-  const q3ItpTot = q3PlanTot ? q3CommitTot / q3PlanTot : null;
-
-  function q3Row(label, plan, actuals, commit, high, low, itp, isTotal, rowKey) {
-    const cls = isTotal ? ' class="total-row"' : '';
-    if (isTotal) {
-      return `<tr${cls}>
-        <td class="label">${label}</td><td class="num">${readonlyVal(plan,'$')}</td>
-        <td class="num">${readonlyVal(actuals,'$')}</td>
-        <td class="num">${readonlyVal(commit,'$')}</td><td class="num">${readonlyVal(high,'$')}</td>
-        <td class="num">${readonlyVal(low,'$')}</td><td class="num">${readonlyVal(itp,'%')}</td>
-      </tr>`;
-    }
+  // Q3 — plan/actuals prefilled, commit/high/low are leader fields
+  function q3Row(label, rk, planVal, actualsVal) {
+    const plan = parseDollar(getEdit('bk',rk,'q3_plan') || planVal);
+    const actuals = parseDollar(getEdit('bk',rk,'q3_actuals') || actualsVal);
+    const commit = parseDollar(getEdit('bk',rk,'q3_commit'));
+    const high = parseDollar(getEdit('bk',rk,'q3_high'));
+    const low = parseDollar(getEdit('bk',rk,'q3_low'));
+    const itp = plan ? commit / plan : null;
     return `<tr>
-      <td class="label">${label}</td><td class="num">${readonlyVal(plan,'$')}</td>
-      <td class="num">${readonlyVal(actuals,'$')}</td>
-      <td class="num">${editInput('bk',rowKey,'q3_commit',{placeholder:'$0',leader:true})}</td>
-      <td class="num">${editInput('bk',rowKey,'q3_high',{placeholder:'$0',leader:true})}</td>
-      <td class="num">${editInput('bk',rowKey,'q3_low',{placeholder:'$0',leader:true})}</td>
-      <td class="num">${readonlyVal(itp,'%')}</td>
+      <td class="label">${label}</td>
+      <td class="num">${editInput('bk',rk,'q3_plan',{placeholder:'$0',prefill:fmtDollar(planVal)})}</td>
+      <td class="num">${editInput('bk',rk,'q3_actuals',{placeholder:'$0',prefill:fmtDollar(actualsVal)})}</td>
+      <td class="num">${editInput('bk',rk,'q3_commit',{placeholder:'$0',leader:true})}</td>
+      <td class="num">${editInput('bk',rk,'q3_high',{placeholder:'$0',leader:true})}</td>
+      <td class="num">${editInput('bk',rk,'q3_low',{placeholder:'$0',leader:true})}</td>
+      <td class="num">${calcDisplay(itp,'%')}</td>
     </tr>`;
   }
 
   const q3Card = `<div class="card"><div class="card-header">Q3</div>
     <table class="ftable"><thead><tr>
-      <th>Bookings</th><th class="num">Plan</th><th class="num">Billed Actuals</th>
+      <th></th><th class="num">Plan</th><th class="num">Actuals</th>
       <th class="num">Commit</th><th class="num">High</th><th class="num">Low</th><th class="num">Commit ITP</th>
     </tr></thead><tbody>
-      ${q3Row('IES',q3PlanIES,q3ActIES,q3CommitIES,q3HighIES,q3LowIES,q3ItpIES,false,'ies')}
-      ${q3Row('Non-IES',q3PlanNon,q3ActNon,q3CommitNon,q3HighNon,q3LowNon,q3ItpNon,false,'nonies')}
-      ${q3Row('Total',q3PlanTot,q3ActTot,q3CommitTot,q3HighTot,q3LowTot,q3ItpTot,true,'total')}
+      ${q3Row('IES','ies',getTarget('IES Revenue'),getActuals('qtd','ies_revenue'))}
+      ${q3Row('Non-IES','nonies',getTarget('Non-IES Revenue'),getActuals('qtd','nonies_revenue'))}
     </tbody></table></div>`;
 
   grid.innerHTML = priorCard + thisCard + q3Card;
 }
 
-// ---------------------------------------------------------------------------
-// Render: Contracts
-// ---------------------------------------------------------------------------
+// =========================================================================
+// CONTRACTS
+// =========================================================================
 function renderContracts() {
   const grid = document.getElementById('contractsGrid');
   const pw = DATA.prior_week_544 || 35;
   const cw = DATA.current_week_544 || 36;
 
-  const priorPlan = getPlan('prior_week','ies_contracts');
-  const priorBilled = getActuals('prior_week','ies_contracts');
+  const priorPlanVal = getPlan('prior_week','ies_contracts');
+  const priorBilledVal = getActuals('prior_week','ies_contracts');
+  const priorPlan = parseNum(getEdit('ct','ies','pw_plan') || priorPlanVal);
+  const priorBilled = parseNum(getEdit('ct','ies','pw_billed') || priorBilledVal);
   const priorSigned = parseNum(getEdit('ct','ies','pw_signed'));
   const priorCommit = parseNum(getEdit('ct','ies','pw_commit'));
   const billedItp = priorPlan ? priorBilled / priorPlan : null;
@@ -573,23 +429,23 @@ function renderContracts() {
 
   const priorCard = `<div class="card"><div class="card-header">Prior Week Contracts (W${pw})</div>
     <table class="ftable"><thead><tr>
-      <th>Contracts</th><th class="num">Plan</th><th class="num">Billed</th>
+      <th></th><th class="num">Plan</th><th class="num">Billed</th>
       <th class="num">Signed</th><th class="num">Commit</th>
       <th class="num">Billed ITP</th><th class="num">ITF</th><th class="num">Signed ITP</th>
     </tr></thead><tbody>
       <tr><td class="label">IES</td>
-        <td class="num">${readonlyVal(priorPlan,'#')}</td>
-        <td class="num">${readonlyVal(priorBilled,'#')}</td>
+        <td class="num">${editInput('ct','ies','pw_plan',{placeholder:'0',prefill:fmtNum(priorPlanVal)})}</td>
+        <td class="num">${editInput('ct','ies','pw_billed',{placeholder:'0',prefill:fmtNum(priorBilledVal)})}</td>
         <td class="num">${editInput('ct','ies','pw_signed',{placeholder:'0'})}</td>
         <td class="num">${editInput('ct','ies','pw_commit',{placeholder:'0'})}</td>
-        <td class="num">${readonlyVal(billedItp,'%')}</td>
-        <td class="num">${readonlyVal(itf,'%')}</td>
-        <td class="num">${readonlyVal(signedItp,'%')}</td>
+        <td class="num">${calcDisplay(billedItp,'%')}</td>
+        <td class="num">${calcDisplay(itf,'%')}</td>
+        <td class="num">${calcDisplay(signedItp,'%')}</td>
       </tr>
     </tbody></table></div>`;
 
-  // This Week (leader fields)
-  const twPlan = getPlan('this_week','ies_contracts');
+  const twPlanVal = getPlan('this_week','ies_contracts');
+  const twPlan = parseNum(getEdit('ct','ies','tw_plan') || twPlanVal);
   const twCommit = parseNum(getEdit('ct','ies','tw_commit'));
   const twHigh = parseNum(getEdit('ct','ies','tw_high'));
   const twLow = parseNum(getEdit('ct','ies','tw_low'));
@@ -597,21 +453,21 @@ function renderContracts() {
 
   const thisCard = `<div class="card"><div class="card-header">This Week Contracts (W${cw})</div>
     <table class="ftable"><thead><tr>
-      <th>Contracts</th><th class="num">Plan</th><th class="num">Commit</th>
+      <th></th><th class="num">Plan</th><th class="num">Commit</th>
       <th class="num">High</th><th class="num">Low</th><th class="num">Commit ITP</th>
     </tr></thead><tbody>
       <tr><td class="label">IES</td>
-        <td class="num">${readonlyVal(twPlan,'#')}</td>
+        <td class="num">${editInput('ct','ies','tw_plan',{placeholder:'0',prefill:fmtNum(twPlanVal)})}</td>
         <td class="num">${editInput('ct','ies','tw_commit',{placeholder:'0',leader:true})}</td>
         <td class="num">${editInput('ct','ies','tw_high',{placeholder:'0',leader:true})}</td>
         <td class="num">${editInput('ct','ies','tw_low',{placeholder:'0',leader:true})}</td>
-        <td class="num">${readonlyVal(twItp,'%')}</td>
+        <td class="num">${calcDisplay(twItp,'%')}</td>
       </tr>
     </tbody></table></div>`;
 
-  // Q3 (leader fields)
-  const q3Plan = parseNum(getTargetRaw('IES Contracts'));
-  const q3Act = getActuals('qtd','ies_contracts');
+  const q3PlanVal = parseNum(getTargetRaw('IES Contracts'));
+  const q3ActVal = getActuals('qtd','ies_contracts');
+  const q3Plan = parseNum(getEdit('ct','ies','q3_plan') || q3PlanVal);
   const q3Commit = parseNum(getEdit('ct','ies','q3_commit'));
   const q3High = parseNum(getEdit('ct','ies','q3_high'));
   const q3Low = parseNum(getEdit('ct','ies','q3_low'));
@@ -619,28 +475,27 @@ function renderContracts() {
 
   const q3Card = `<div class="card"><div class="card-header">Q3 Contracts</div>
     <table class="ftable"><thead><tr>
-      <th>Contracts</th><th class="num">Plan</th><th class="num">Billed Actuals</th>
+      <th></th><th class="num">Plan</th><th class="num">Actuals</th>
       <th class="num">Commit</th><th class="num">High</th><th class="num">Low</th><th class="num">Commit ITP</th>
     </tr></thead><tbody>
       <tr><td class="label">IES</td>
-        <td class="num">${readonlyVal(q3Plan,'#')}</td>
-        <td class="num">${readonlyVal(q3Act,'#')}</td>
+        <td class="num">${editInput('ct','ies','q3_plan',{placeholder:'0',prefill:fmtNum(q3PlanVal)})}</td>
+        <td class="num">${editInput('ct','ies','q3_actuals',{placeholder:'0',prefill:fmtNum(q3ActVal)})}</td>
         <td class="num">${editInput('ct','ies','q3_commit',{placeholder:'0',leader:true})}</td>
         <td class="num">${editInput('ct','ies','q3_high',{placeholder:'0',leader:true})}</td>
         <td class="num">${editInput('ct','ies','q3_low',{placeholder:'0',leader:true})}</td>
-        <td class="num">${readonlyVal(q3Itp,'%')}</td>
+        <td class="num">${calcDisplay(q3Itp,'%')}</td>
       </tr>
     </tbody></table></div>`;
 
   grid.innerHTML = priorCard + thisCard + q3Card;
 }
 
-// ---------------------------------------------------------------------------
-// Render: APRC & Win Rate (Prior Week + Q3 only)
-// ---------------------------------------------------------------------------
+// =========================================================================
+// APRC & Win Rate
+// =========================================================================
 function renderAPRC() {
   const grid = document.getElementById('aprcGrid');
-
   function aprcRow(label, key, section) {
     return `<tr>
       <td class="label">${label}</td>
@@ -650,7 +505,7 @@ function renderAPRC() {
   }
 
   const priorCard = `<div class="card"><div class="card-header">APRC — Prior Week</div>
-    <table class="ftable"><thead><tr><th>APRC</th><th class="num">Actuals</th><th class="num">W/W +/-</th></tr></thead><tbody>
+    <table class="ftable"><thead><tr><th></th><th class="num">Actuals</th><th class="num">W/W +/-</th></tr></thead><tbody>
       ${aprcRow('IES','ies','pw')}${aprcRow('Non-IES','nonies','pw')}
     </tbody></table>
     <table class="ftable" style="margin-top:8px"><thead><tr><th>Win Rate</th><th class="num">Actuals</th><th class="num">W/W +/-</th></tr></thead><tbody>
@@ -661,7 +516,7 @@ function renderAPRC() {
     </tbody></table></div>`;
 
   const q3Card = `<div class="card"><div class="card-header">APRC — Q3</div>
-    <table class="ftable"><thead><tr><th>APRC</th><th class="num">Actuals</th><th class="num">Q/Q +/-</th></tr></thead><tbody>
+    <table class="ftable"><thead><tr><th></th><th class="num">Actuals</th><th class="num">Q/Q +/-</th></tr></thead><tbody>
       ${aprcRow('IES','ies','q3')}${aprcRow('Non-IES','nonies','q3')}
     </tbody></table>
     <table class="ftable" style="margin-top:8px"><thead><tr><th>Win Rate</th><th class="num">Actuals</th><th class="num">Q/Q +/-</th></tr></thead><tbody>
@@ -674,24 +529,23 @@ function renderAPRC() {
   grid.innerHTML = priorCard + q3Card;
 }
 
-// ---------------------------------------------------------------------------
-// Render: Pipeline (Prior Week, This Week, Q3 — no Month)
-// ---------------------------------------------------------------------------
+// =========================================================================
+// PIPELINE
+// =========================================================================
 function renderPipeline() {
   const grid = document.getElementById('pipelineGrid');
   const stages = ['Solution','Propose','Commit','Total'];
   const sizes = ['$1-10k','$10-25k','$25k-$50k','$50k+','Total'];
 
   function pipeRow(label, key, section, isTotal) {
-    const cls = isTotal ? ' class="total-row"' : '';
     const isLeader = (section === 'tw' || section === 'q3');
     if (isTotal) {
       const pipe = stages.slice(0,-1).reduce((s,st) => s + parseDollar(getEdit('pipe',st.toLowerCase(),section+'_pipe')), 0);
       const opps = stages.slice(0,-1).reduce((s,st) => s + parseNum(getEdit('pipe',st.toLowerCase(),section+'_opps')), 0);
-      return `<tr${cls}>
+      return `<tr class="total-row">
         <td class="label">${label}</td>
-        <td class="num">${readonlyVal(pipe,'$')}</td>
-        <td class="num">${readonlyVal(opps,'#')}</td>
+        <td class="num">${calcDisplay(pipe,'$')}</td>
+        <td class="num">${calcDisplay(opps,'#')}</td>
         <td class="num">${editInput('pipe',key,section+'_commit',{placeholder:'%',leader:isLeader})}</td>
         <td class="num">${editInput('pipe',key,section+'_upside',{placeholder:'%',leader:isLeader})}</td>
       </tr>`;
@@ -706,15 +560,14 @@ function renderPipeline() {
   }
 
   function sizeRow(label, key, section, isTotal) {
-    const cls = isTotal ? ' class="total-row"' : '';
     const isLeader = (section === 'tw' || section === 'q3');
     if (isTotal) {
       const pipe = sizes.slice(0,-1).reduce((s,sz) => s + parseDollar(getEdit('pipesize',sz.replace(/[$ +k]/g,'').toLowerCase(),section+'_pipe')), 0);
       const opps = sizes.slice(0,-1).reduce((s,sz) => s + parseNum(getEdit('pipesize',sz.replace(/[$ +k]/g,'').toLowerCase(),section+'_opps')), 0);
-      return `<tr${cls}>
+      return `<tr class="total-row">
         <td class="label">${label}</td>
-        <td class="num">${readonlyVal(pipe,'$')}</td>
-        <td class="num">${readonlyVal(opps,'#')}</td>
+        <td class="num">${calcDisplay(pipe,'$')}</td>
+        <td class="num">${calcDisplay(opps,'#')}</td>
         <td class="num">${editInput('pipesize',key,section+'_commit',{placeholder:'%',leader:isLeader})}</td>
         <td class="num">${editInput('pipesize',key,section+'_upside',{placeholder:'%',leader:isLeader})}</td>
       </tr>`;
@@ -757,9 +610,9 @@ function renderPipeline() {
     pipeCard('Q3', 'q3');
 }
 
-// ---------------------------------------------------------------------------
-// Render: Big Deals
-// ---------------------------------------------------------------------------
+// =========================================================================
+// BIG DEALS
+// =========================================================================
 function renderBigDeals() {
   const wrap = document.getElementById('bigDealsWrap');
   let deals = DATA?.big_deals || [];
@@ -770,12 +623,13 @@ function renderBigDeals() {
 
   if (deals.length === 0) {
     wrap.innerHTML = `<div style="padding:40px;text-align:center;color:var(--muted)">
-      No big deals data available for the current selection.</div>`;
+      No big deals for the current selection.</div>`;
     return;
   }
 
   let rows = deals.map((d, i) => {
-    const commitVal = getEdit('deals', String(i), 'commit_upside') || d.commit_upside || '';
+    const dealKey = (d.opportunity_name || '').replace(/[|'"]/g,'_').substring(0,40) + '_' + i;
+    const commitVal = getEdit('deals', dealKey, 'commit_upside') || d.commit_upside || '';
     return `<tr>
       <td>${escHtml(d.account_name)}</td>
       <td>${escHtml(d.opportunity_name)}</td>
@@ -788,23 +642,20 @@ function renderBigDeals() {
       <td class="num">${fmtDollar(d.amount)}</td>
       <td class="num">${fmtDollar(d.incremental_revenue)}</td>
       <td><input class="edit-cell text-left leader-field" value="${escHtml(commitVal)}" placeholder="Commit/Upside"
-        onchange="setEdit('deals','${i}','commit_upside',this.value)" style="width:110px"></td>
+        onchange="setEdit('deals','${escHtml(dealKey)}','commit_upside',this.value)" style="width:110px"></td>
       <td class="num">${d.age}</td>
-      <td>${escHtml(d.next_step)}</td>
+      <td style="max-width:250px;white-space:normal;font-size:11px">${escHtml(d.next_step)}</td>
     </tr>`;
   }).join('');
 
   wrap.innerHTML = `<table class="deals-table"><thead><tr>
     <th>Account</th><th>Opportunity</th><th>Division</th><th>Manager</th><th>Owner</th>
     <th>Close Date</th><th>Stage</th><th>Stage Reason</th><th class="num">Amount</th>
-    <th class="num">Incr. Revenue</th><th>Commit/Upside</th><th class="num">Age</th>
+    <th class="num">Incr. Rev</th><th>Commit/Upside</th><th class="num">Age</th>
     <th>Next Step</th>
   </tr></thead><tbody>${rows}</tbody></table>`;
 }
 
-// ---------------------------------------------------------------------------
-// Render all
-// ---------------------------------------------------------------------------
 function renderAll() {
   renderBookings();
   renderContracts();
@@ -813,9 +664,6 @@ function renderAll() {
   renderBigDeals();
 }
 
-// ---------------------------------------------------------------------------
-// Export
-// ---------------------------------------------------------------------------
 function exportWeek() {
   const snapshot = {
     exported_at: new Date().toISOString(),
@@ -827,16 +675,12 @@ function exportWeek() {
   const blob = new Blob([JSON.stringify(snapshot, null, 2)], {type: 'application/json'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  const dateStr = new Date().toISOString().slice(0,10);
   a.href = url;
-  a.download = `forecast_W${DATA?.current_week_544 || 'XX'}_${dateStr}.json`;
+  a.download = `forecast_W${DATA?.current_week_544 || 'XX'}_${new Date().toISOString().slice(0,10)}.json`;
   a.click();
   URL.revokeObjectURL(url);
 }
 
-// ---------------------------------------------------------------------------
-// Boot
-// ---------------------------------------------------------------------------
 init();
 </script>
 </body>
