@@ -1,6 +1,8 @@
-*.whl
-*.json
+# Only track dashboard files — ignore everything else
+*
+!.gitignore
+!index.html
+!mm_weekly_forecast.html
 !forecast_data.json
-.cursor/
-actuals_*.json
-compliance_config.json
+!refresh_forecast_data.py
+!process_big_deals.py
