@@ -1,0 +1,21 @@
+---
+description: Mid-market data foundation — table catalog, semantic layer, and validation benchmarks for MM/QBO Advanced/IES KPIs. Activates for queries about MM metrics, segment analysis, or target customers.
+alwaysApply: false
+---
+
+# Mid-Market Data Foundation
+
+When the user asks about data topics related to **Mid-market / MM / QBO Advanced / IES** (GNS, subscribers, contracts, revenue, billing, churn, retention, product usage, customers, pipeline, opportunities, bookings, win rate, leads, MQL, SQL, conversion, segment analysis, target customers, or any Mid-market KPIs):
+
+1. **Load the skill** from `~/.cursor/skills/intuit-data-foundation-mm/SKILL.md` and follow its 6-step workflow.
+2. **Key reference files** (all under the skill's `references/` directory):
+   - `semantic-layer.md` — Metric definitions, formulas, and sample queries (search by metric name, don't read the full file)
+   - `catalog/INDEX.md` → domain-specific catalog files (aggregated-kpis.md, core-base.md, etc.)
+   - `validation-benchmarks.md` — SoT benchmark values for cross-checking query results
+   - `lineage.md` — Table dependency DAG for debugging discrepancies
+
+3. **Critical rules**:
+   - **Aggregated tables first**, base tables only for company-level detail or custom joins
+   - **MM filter**: For non-sales metrics use `mm_smb_group = 'MM'`; for sales pipeline use `division_l5 IN ('MM Managed Accounts L5', 'Mid Market OB BDR L5')`
+   - **Fiscal calendar**: FY starts Aug 1. Feb 2026 = FY26 month 7.
+   - **Validate against SoT** before presenting results to stakeholders

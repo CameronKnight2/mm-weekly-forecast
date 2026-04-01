@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MM Demand Gen — Campaign Funnel Analysis (90-Day)</title>
+<style>
+  :root {
+    --bg: #0f1117; --surface: #1a1d27; --surface2: #242836;
+    --border: #2e3348; --text: #e4e6f0; --muted: #8b8fa8;
+    --accent: #6366f1; --accent2: #818cf8; --green: #22c55e;
+    --yellow: #eab308; --red: #ef4444; --orange: #f97316;
+    --cyan: #06b6d4; --pink: #ec4899;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; }
+  .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+  header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 28px; flex-wrap: wrap; gap: 12px; }
+  h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
+  h1 span { color: var(--accent2); }
+  .subtitle { color: var(--muted); font-size: 13px; margin-top: 4px; }
+  .badge { display: inline-block; background: var(--accent); color: #fff; font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 600; }
+  .tabs { display: flex; gap: 4px; background: var(--surface); border-radius: 10px; padding: 4px; margin-bottom: 24px; }
+  .tab { padding: 8px 18px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--muted); transition: all .2s; border: none; background: none; }
+  .tab.active { background: var(--accent); color: #fff; }
+  .tab:hover:not(.active) { color: var(--text); background: var(--surface2); }
+  .panel { display: none; } .panel.active { display: block; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 24px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 24px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
+  .card-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); margin-bottom: 8px; }
+  .card-value { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; }
+  .card-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .card-trend { font-size: 12px; font-weight: 600; margin-top: 4px; }
+  .trend-up { color: var(--green); } .trend-down { color: var(--red); } .trend-flat { color: var(--yellow); }
+
+  .funnel-container { display: flex; flex-direction: column; align-items: center; gap: 0; margin: 30px 0; }
+  .funnel-stage { display: flex; align-items: center; gap: 16px; width: 100%; max-width: 800px; }
+  .funnel-bar-wrap { flex: 1; position: relative; }
+  .funnel-bar { height: 52px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; padding: 0 18px; transition: all .3s; cursor: default; }
+  .funnel-bar:hover { filter: brightness(1.15); transform: scale(1.01); }
+  .funnel-label { font-weight: 700; font-size: 15px; }
+  .funnel-count { font-weight: 700; font-size: 18px; }
+  .funnel-arrow { display: flex; flex-direction: column; align-items: center; width: 100px; padding: 4px 0; }
+  .funnel-arrow .cr { font-size: 13px; font-weight: 700; color: var(--accent2); }
+  .funnel-arrow .arrow-icon { color: var(--muted); font-size: 18px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 10px 12px; border-bottom: 2px solid var(--border); color: var(--muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; position: sticky; top: 0; background: var(--surface); }
+  td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  tr:hover td { background: var(--surface2); }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .highlight-row td { background: rgba(99,102,241,0.08); }
+
+  .bar-cell { display: flex; align-items: center; gap: 8px; }
+  .mini-bar { height: 6px; border-radius: 3px; background: var(--accent); min-width: 2px; }
+  .mini-bar.green { background: var(--green); }
+  .mini-bar.yellow { background: var(--yellow); }
+  .mini-bar.orange { background: var(--orange); }
+  .mini-bar.red { background: var(--red); }
+
+  .section-title { font-size: 16px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .section-title .dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  .channel-bars { display: flex; gap: 6px; align-items: flex-end; height: 120px; }
+  .channel-bar-group { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; }
+  .channel-bar { width: 100%; border-radius: 4px 4px 0 0; transition: all .3s; min-height: 2px; }
+  .channel-bar:hover { filter: brightness(1.2); }
+  .channel-label { font-size: 10px; color: var(--muted); text-align: center; }
+  .channel-value { font-size: 11px; font-weight: 700; }
+
+  .insight-box { background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(6,182,212,0.05)); border: 1px solid rgba(99,102,241,0.3); border-radius: 12px; padding: 18px; margin-bottom: 18px; }
+  .insight-box h3 { font-size: 14px; font-weight: 700; margin-bottom: 8px; color: var(--accent2); }
+  .insight-box ul { padding-left: 18px; font-size: 13px; color: var(--text); }
+  .insight-box li { margin-bottom: 6px; }
+  .insight-box li strong { color: var(--accent2); }
+
+  .scroll-table { max-height: 500px; overflow-y: auto; border-radius: 12px; }
+  .scroll-table::-webkit-scrollbar { width: 6px; }
+  .scroll-table::-webkit-scrollbar-track { background: var(--surface); }
+  .scroll-table::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  @media (max-width: 900px) {
+    .grid-4, .grid-3 { grid-template-columns: repeat(2, 1fr); }
+    .grid-2 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div>
+      <h1>MM Demand Gen <span>Campaign Funnel</span></h1>
+      <div class="subtitle">FY26 Months 5–7 (Dec 2025 – Feb 2026) &middot; Mid-Market Sales Division &middot; Source: rob_dashboard + e2e_funnel_pipeline</div>
+    </div>
+    <div class="badge">Last 90 Days</div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" onclick="showPanel('overview')">Funnel Overview</button>
+    <button class="tab" onclick="showPanel('campaigns')">Campaign Deep-Dive</button>
+    <button class="tab" onclick="showPanel('pipeline')">Pipeline by Campaign</button>
+    <button class="tab" onclick="showPanel('insights')">Insights & Recommendations</button>
+  </div>
+
+  <!-- ===== PANEL 1: FUNNEL OVERVIEW ===== -->
+  <div id="overview" class="panel active">
+    <div class="grid-4">
+      <div class="card">
+        <div class="card-title">Total MQLs (90-Day)</div>
+        <div class="card-value">71,216</div>
+        <div class="card-sub">Across all channels</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Avg Cycle Time</div>
+        <div class="card-value">17.6 days</div>
+        <div class="card-sub">Weighted avg across 3 months</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Avg Won Opp Amount</div>
+        <div class="card-value">$2,323</div>
+        <div class="card-sub">1,037 won opps / 90 days</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Total Online Sales</div>
+        <div class="card-value">$13.9M</div>
+        <div class="card-sub">Dec $4.5M · Jan $5.8M · Feb $3.6M</div>
+      </div>
+    </div>
+
+    <!-- Monthly MQL Trend -->
+    <div class="section-title"><div class="dot" style="background:var(--accent)"></div> Monthly MQL Volume by Channel</div>
+    <div class="grid-3" style="margin-bottom:32px;">
+      <div class="card">
+        <div class="card-title">Dec 2025 (FM5)</div>
+        <div class="card-value">29,369</div>
+        <div style="margin-top:12px;">
+          <div class="channel-bars">
+            <div class="channel-bar-group"><div class="channel-bar" style="height:100px;background:var(--accent)"></div><div class="channel-value">28,877</div><div class="channel-label">Sales</div></div>
+            <div class="channel-bar-group"><div class="channel-bar" style="height:1px;background:var(--cyan)"></div><div class="channel-value">288</div><div class="channel-label">Mktg</div></div>
+            <div class="channel-bar-group"><div class="channel-bar" style="height:1px;background:var(--green)"></div><div class="channel-value">203</div><div class="channel-label">Acct</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Jan 2026 (FM6)</div>
+        <div class="card-value">28,283</div>
+        <div style="margin-top:12px;">
+          <div class="channel-bars">
+            <div class="channel-bar-group"><div class="channel-bar" style="height:47px;background:var(--accent)"></div><div class="channel-value">13,700</div><div class="channel-label">Sales</div></div>
+            <div class="channel-bar-group"><div class="channel-bar" style="height:50px;background:var(--cyan)"></div><div class="channel-value">14,537</div><div class="channel-label">Mktg</div></div>
+            <div class="channel-bar-group"><div class="channel-bar" style="height:1px;background:var(--green)"></div><div class="channel-value">44</div><div class="channel-label">Acct</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Feb 2026 (FM7)</div>
+        <div class="card-value" style="color:var(--yellow)">13,564 <span style="font-size:14px;color:var(--red)">&#9660; -52%</span></div>
+        <div style="margin-top:12px;">
+          <div class="channel-bars">
+            <div class="channel-bar-group"><div class="channel-bar" style="height:46px;background:var(--accent)"></div><div class="channel-value">6,128</div><div class="channel-label">Sales</div></div>
+            <div class="channel-bar-group"><div class="channel-bar" style="height:47px;background:var(--cyan)"></div><div class="channel-value">6,395</div><div class="channel-label">Mktg</div></div>
+            <div class="channel-bar-group"><div class="channel-bar" style="height:8px;background:var(--green)"></div><div class="channel-value">1,040</div><div class="channel-label">Acct</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pipeline Health -->
+    <div class="section-title"><div class="dot" style="background:var(--green)"></div> Pipeline Health (Monthly Snapshots)</div>
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">Avg Open Opp (Prob-Weighted)</div>
+        <table>
+          <tr><td>Dec</td><td class="num">$13,296</td><td class="num" style="color:var(--muted)">15,158 opps</td></tr>
+          <tr><td>Jan</td><td class="num">$16,285</td><td class="num" style="color:var(--muted)">15,004 opps</td></tr>
+          <tr><td>Feb</td><td class="num">$17,107</td><td class="num" style="color:var(--muted)">11,953 opps</td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <div class="card-title">Avg Won Opp Amount</div>
+        <table>
+          <tr><td>Dec</td><td class="num">$2,305</td><td class="num" style="color:var(--muted)">310 won</td></tr>
+          <tr><td>Jan</td><td class="num">$2,412</td><td class="num" style="color:var(--muted)">466 won</td></tr>
+          <tr><td>Feb</td><td class="num">$2,185</td><td class="num" style="color:var(--muted)">261 won</td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <div class="card-title">Avg Open Age (Days)</div>
+        <table>
+          <tr><td>Dec</td><td class="num">76.8 days</td></tr>
+          <tr><td>Jan</td><td class="num">81.5 days</td></tr>
+          <tr><td>Feb</td><td class="num">80.7 days</td></tr>
+        </table>
+        <div class="card-sub" style="margin-top:8px;color:var(--yellow)">Pipeline aging &uarr; — opps sitting longer</div>
+      </div>
+    </div>
+
+    <!-- Funnel Type Breakdown -->
+    <div class="section-title"><div class="dot" style="background:var(--cyan)"></div> Lead Source / Funnel Type (FM5–7)</div>
+    <div class="card">
+      <table>
+        <thead><tr><th>Funnel Type</th><th class="num">Leads</th><th class="num">Opportunities</th><th class="num">Pipeline Value</th><th>Share of Pipeline</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Outbound</strong></td><td class="num">383</td><td class="num">53,104</td><td class="num">$1.49B</td><td><div class="bar-cell"><div class="mini-bar" style="width:200px"></div>59%</div></td></tr>
+          <tr><td><strong>Webform</strong></td><td class="num">7,025</td><td class="num">11,928</td><td class="num">$859M</td><td><div class="bar-cell"><div class="mini-bar green" style="width:140px"></div>34%</div></td></tr>
+          <tr><td><strong>Phone</strong></td><td class="num">2,701</td><td class="num">6,668</td><td class="num">$163M</td><td><div class="bar-cell"><div class="mini-bar yellow" style="width:26px"></div>6%</div></td></tr>
+          <tr><td><strong>Other</strong></td><td class="num">5,071</td><td class="num">1,053</td><td class="num">$76M</td><td><div class="bar-cell"><div class="mini-bar orange" style="width:6px"></div>~1%</div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ===== PANEL 2: CAMPAIGN DEEP-DIVE ===== -->
+  <div id="campaigns" class="panel">
+    <div class="section-title"><div class="dot" style="background:var(--accent)"></div> Top 20 Campaigns by MQL Volume (90-Day Total)</div>
+    <div class="card" style="padding:0;">
+      <div class="scroll-table">
+        <table>
+          <thead>
+            <tr><th>#</th><th>Campaign</th><th class="num">Total MQLs</th><th class="num">Dec</th><th class="num">Jan</th><th class="num">Feb</th><th>Trend</th><th>Category</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>1</td><td>IES IPD Abandoners - Unmanaged - BDR</td><td class="num"><strong>10,980</strong></td><td class="num">223</td><td class="num">7,964</td><td class="num">2,793</td><td class="trend-down">&#9660; Declining</td><td><span class="badge" style="background:var(--cyan)">IES Re-engage</span></td></tr>
+            <tr><td>2</td><td>Outreach AM Campaign</td><td class="num"><strong>7,218</strong></td><td class="num">3,643</td><td class="num">1,171</td><td class="num">2,404</td><td class="trend-flat">&#9654; Variable</td><td><span class="badge" style="background:var(--orange)">Outreach</span></td></tr>
+            <tr><td>3</td><td>Payroll Switcher $10M+ (Email+Phone) - Managed</td><td class="num"><strong>7,090</strong></td><td class="num">4,321</td><td class="num">2,769</td><td class="num">—</td><td class="trend-down">&#9660; Ended</td><td><span class="badge" style="background:var(--green)">Payroll</span></td></tr>
+            <tr><td>4</td><td>IES IPD Abandoners - Channel Sales L3 - BDR</td><td class="num"><strong>4,388</strong></td><td class="num">—</td><td class="num">3,061</td><td class="num">1,313</td><td class="trend-down">&#9660; Declining</td><td><span class="badge" style="background:var(--cyan)">IES Re-engage</span></td></tr>
+            <tr><td>5</td><td>Payroll Switcher $10M+ (Email+Phone) - Unmanaged</td><td class="num"><strong>4,321</strong></td><td class="num">4,321</td><td class="num">—</td><td class="num">—</td><td class="trend-down">&#9660; One-shot</td><td><span class="badge" style="background:var(--green)">Payroll</span></td></tr>
+            <tr><td>6</td><td>IES IPD Abandoners - Managed - BDR</td><td class="num"><strong>4,137</strong></td><td class="num">—</td><td class="num">3,194</td><td class="num">931</td><td class="trend-down">&#9660; Declining</td><td><span class="badge" style="background:var(--cyan)">IES Re-engage</span></td></tr>
+            <tr><td>7</td><td>BDR for KAM Blitz Q2 FY26 - Email</td><td class="num"><strong>3,735</strong></td><td class="num">3,735</td><td class="num">—</td><td class="num">—</td><td class="trend-down">&#9660; One-shot</td><td><span class="badge" style="background:var(--pink)">Blitz</span></td></tr>
+            <tr><td>8</td><td>BDR for KAM Blitz Q2 FY26 - Phone+Email</td><td class="num"><strong>3,725</strong></td><td class="num">3,722</td><td class="num">—</td><td class="num">—</td><td class="trend-down">&#9660; One-shot</td><td><span class="badge" style="background:var(--pink)">Blitz</span></td></tr>
+            <tr><td>9</td><td>Payroll Switcher (AIO) 1 Base 0 PEPM - Email+Phone</td><td class="num"><strong>3,396</strong></td><td class="num">—</td><td class="num">3,396</td><td class="num">—</td><td class="trend-down">&#9660; One-shot</td><td><span class="badge" style="background:var(--green)">Payroll</span></td></tr>
+            <tr><td>10</td><td>Payroll Switcher $10M+ (Email+Phone) - EMM Team</td><td class="num"><strong>2,511</strong></td><td class="num">1,506</td><td class="num">1,005</td><td class="num">—</td><td class="trend-down">&#9660; Ended</td><td><span class="badge" style="background:var(--green)">Payroll</span></td></tr>
+            <tr><td>11</td><td>Outreach BDR Campaign</td><td class="num"><strong>2,344</strong></td><td class="num">644</td><td class="num">1,671</td><td class="num">—</td><td class="trend-up">&#9650; Growing</td><td><span class="badge" style="background:var(--orange)">Outreach</span></td></tr>
+            <tr><td>12</td><td>IES NBA ME QBO FY26 - AM</td><td class="num"><strong>1,583</strong></td><td class="num">—</td><td class="num">—</td><td class="num">1,583</td><td class="trend-up">&#9650; New</td><td><span class="badge" style="background:var(--accent)">NBA Play</span></td></tr>
+            <tr><td>13</td><td>Payroll Switcher $10M+ (Phone Only) - Managed</td><td class="num"><strong>1,364</strong></td><td class="num">829</td><td class="num">535</td><td class="num">—</td><td class="trend-down">&#9660; Ended</td><td><span class="badge" style="background:var(--green)">Payroll</span></td></tr>
+            <tr><td>14</td><td>Outreach IES Propensity</td><td class="num"><strong>1,231</strong></td><td class="num">326</td><td class="num">735</td><td class="num">170</td><td class="trend-down">&#9660; Declining</td><td><span class="badge" style="background:var(--orange)">Outreach</span></td></tr>
+            <tr><td>15</td><td>Money Co-Sell Self Prospecting</td><td class="num"><strong>1,157</strong></td><td class="num">1,112</td><td class="num">—</td><td class="num">—</td><td class="trend-down">&#9660; One-shot</td><td><span class="badge" style="background:var(--yellow);color:#000">Money</span></td></tr>
+            <tr><td>16</td><td>BDR for KAM Blitz Q2 FY26 - Phone</td><td class="num"><strong>1,033</strong></td><td class="num">1,033</td><td class="num">—</td><td class="num">—</td><td class="trend-down">&#9660; One-shot</td><td><span class="badge" style="background:var(--pink)">Blitz</span></td></tr>
+            <tr><td>17</td><td>Payroll Switcher $10M+ (Phone Only) - Unmanaged</td><td class="num"><strong>829</strong></td><td class="num">829</td><td class="num">—</td><td class="num">—</td><td class="trend-down">&#9660; One-shot</td><td><span class="badge" style="background:var(--green)">Payroll</span></td></tr>
+            <tr><td>18</td><td>Data Cloud Targeted Prospects (Self-Serve)</td><td class="num"><strong>812</strong></td><td class="num">—</td><td class="num">—</td><td class="num">707</td><td class="trend-up">&#9650; New</td><td><span class="badge" style="background:var(--accent)">Data Cloud</span></td></tr>
+            <tr><td>19</td><td>IES Hot List Relevvo Scored Q3'26 - Unmanaged</td><td class="num"><strong>540</strong></td><td class="num">—</td><td class="num">—</td><td class="num">537</td><td class="trend-up">&#9650; New</td><td><span class="badge" style="background:var(--cyan)">AI Scored</span></td></tr>
+            <tr><td>20</td><td>IES NBA ME DT FY26 - AM</td><td class="num"><strong>523</strong></td><td class="num">—</td><td class="num">—</td><td class="num">523</td><td class="trend-up">&#9650; New</td><td><span class="badge" style="background:var(--accent)">NBA Play</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div style="height:24px"></div>
+
+    <div class="section-title"><div class="dot" style="background:var(--green)"></div> Campaign Category Mix (90-Day MQLs)</div>
+    <div class="grid-4">
+      <div class="card" style="border-left:3px solid var(--cyan)">
+        <div class="card-title">IES Re-engagement</div>
+        <div class="card-value">19,505</div>
+        <div class="card-sub">27.4% of total MQLs</div>
+        <div class="card-sub">IPD Abandoners across 3 segments</div>
+      </div>
+      <div class="card" style="border-left:3px solid var(--green)">
+        <div class="card-title">Payroll Switcher</div>
+        <div class="card-value">19,511</div>
+        <div class="card-sub">27.4% of total MQLs</div>
+        <div class="card-sub">$10M+ rev AIO campaigns</div>
+      </div>
+      <div class="card" style="border-left:3px solid var(--orange)">
+        <div class="card-title">Outreach / Outbound</div>
+        <div class="card-value">10,793</div>
+        <div class="card-sub">15.2% of total MQLs</div>
+        <div class="card-sub">AM + BDR + IES Propensity</div>
+      </div>
+      <div class="card" style="border-left:3px solid var(--pink)">
+        <div class="card-title">KAM Blitz (Q2 FY26)</div>
+        <div class="card-value">8,493</div>
+        <div class="card-sub">11.9% of total MQLs</div>
+        <div class="card-sub">Dec only — campaign completed</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== PANEL 3: PIPELINE BY CAMPAIGN ===== -->
+  <div id="pipeline" class="panel">
+    <div class="section-title"><div class="dot" style="background:var(--accent)"></div> Open Pipeline by Campaign (Current Snapshot)</div>
+    <div class="card" style="padding:0;">
+      <div class="scroll-table">
+        <table>
+          <thead>
+            <tr><th>#</th><th>Campaign</th><th class="num">Total Opps</th><th class="num">Total Pipeline</th><th class="num">Sol+ Opps</th><th class="num">Sol+ Pipeline</th><th class="num">Commit Opps</th><th class="num">Commit Pipeline</th><th>Sol+ Rate</th></tr>
+          </thead>
+          <tbody>
+            <tr class="highlight-row"><td>1</td><td><strong>Web Managed IES</strong></td><td class="num">722</td><td class="num">$118.4M</td><td class="num">139</td><td class="num">$11.5M</td><td class="num">42</td><td class="num">$4.4M</td><td><div class="bar-cell"><div class="mini-bar green" style="width:38px"></div>19.3%</div></td></tr>
+            <tr><td>2</td><td>Acct Pod Co-Sell Accountant Driven</td><td class="num">336</td><td class="num">$24.6M</td><td class="num">101</td><td class="num">$5.7M</td><td class="num">40</td><td class="num">$1.1M</td><td><div class="bar-cell"><div class="mini-bar green" style="width:60px"></div>30.1%</div></td></tr>
+            <tr><td>3</td><td>Acct Lead Pass Accountant Driven</td><td class="num">993</td><td class="num">$23.5M</td><td class="num">127</td><td class="num">$3.7M</td><td class="num">33</td><td class="num">$955K</td><td><div class="bar-cell"><div class="mini-bar yellow" style="width:26px"></div>12.8%</div></td></tr>
+            <tr><td>4</td><td>AM Self-Prospecting (Other)</td><td class="num">471</td><td class="num">$11.4M</td><td class="num">137</td><td class="num">$6.1M</td><td class="num">63</td><td class="num">$1.8M</td><td><div class="bar-cell"><div class="mini-bar green" style="width:58px"></div>29.1%</div></td></tr>
+            <tr><td>5</td><td>No Campaign Identified</td><td class="num">431</td><td class="num">$11.3M</td><td class="num">77</td><td class="num">$6.1M</td><td class="num">28</td><td class="num">$1.9M</td><td><div class="bar-cell"><div class="mini-bar yellow" style="width:36px"></div>17.9%</div></td></tr>
+            <tr><td>6</td><td>IES Renewal Opportunity</td><td class="num">185</td><td class="num">$8.8M</td><td class="num">88</td><td class="num">$5.0M</td><td class="num">65</td><td class="num">$3.8M</td><td><div class="bar-cell"><div class="mini-bar green" style="width:95px"></div><strong>47.6%</strong></div></td></tr>
+            <tr><td>7</td><td>Misc AM Prospect</td><td class="num">861</td><td class="num">$8.1M</td><td class="num">132</td><td class="num">$3.7M</td><td class="num">67</td><td class="num">$929K</td><td><div class="bar-cell"><div class="mini-bar yellow" style="width:31px"></div>15.3%</div></td></tr>
+            <tr><td>8</td><td>IFA Trade Show Feb 2026 - Hand Raiser</td><td class="num">7</td><td class="num">$5.8M</td><td class="num">3</td><td class="num">$5.6M</td><td class="num">1</td><td class="num">$250K</td><td><div class="bar-cell"><div class="mini-bar green" style="width:86px"></div><strong>42.9%</strong></div></td></tr>
+            <tr><td>9</td><td>Diocese FY26 Play</td><td class="num">15</td><td class="num">$4.0M</td><td class="num">4</td><td class="num">$3.4M</td><td class="num">0</td><td class="num">—</td><td><div class="bar-cell"><div class="mini-bar yellow" style="width:53px"></div>26.7%</div></td></tr>
+            <tr><td>10</td><td>Acct Lead Pass Client Driven</td><td class="num">88</td><td class="num">$3.7M</td><td class="num">22</td><td class="num">$2.7M</td><td class="num">4</td><td class="num">$691K</td><td><div class="bar-cell"><div class="mini-bar yellow" style="width:50px"></div>25.0%</div></td></tr>
+            <tr><td>11</td><td>IFA Trade Show Feb 2026 - Missed Connections</td><td class="num">6</td><td class="num">$3.3M</td><td class="num">3</td><td class="num">$3.3M</td><td class="num">0</td><td class="num">—</td><td><div class="bar-cell"><div class="mini-bar green" style="width:100px"></div><strong>50.0%</strong></div></td></tr>
+            <tr><td>12</td><td>SMB IES Pass to Mid</td><td class="num">67</td><td class="num">$3.0M</td><td class="num">23</td><td class="num">$2.3M</td><td class="num">6</td><td class="num">$645K</td><td><div class="bar-cell"><div class="mini-bar green" style="width:69px"></div>34.3%</div></td></tr>
+            <tr><td>13</td><td>IES Care Warm Transfer</td><td class="num">402</td><td class="num">$2.9M</td><td class="num">45</td><td class="num">$1.9M</td><td class="num">9</td><td class="num">$611K</td><td><div class="bar-cell"><div class="mini-bar yellow" style="width:22px"></div>11.2%</div></td></tr>
+            <tr><td>14</td><td>IES IPD Abandoners - Unmanaged - BDR</td><td class="num">242</td><td class="num">$2.4M</td><td class="num">26</td><td class="num">$1.2M</td><td class="num">6</td><td class="num">$67K</td><td><div class="bar-cell"><div class="mini-bar red" style="width:22px"></div>10.7%</div></td></tr>
+            <tr><td>15</td><td>IES IPD Abandoners - Managed - BDR</td><td class="num">149</td><td class="num">$1.7M</td><td class="num">13</td><td class="num">$598K</td><td class="num">2</td><td class="num">$215K</td><td><div class="bar-cell"><div class="mini-bar red" style="width:17px"></div>8.7%</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div style="height:24px"></div>
+
+    <div class="section-title"><div class="dot" style="background:var(--green)"></div> Pipeline by Sales Motion</div>
+    <div class="grid-3">
+      <div class="card" style="border-left:3px solid var(--accent)">
+        <div class="card-title">Mid Market (10+)</div>
+        <div class="card-value">$194M</div>
+        <div class="card-sub">5,771 opps &middot; Sol+: 901 opps ($55M)</div>
+        <div class="card-sub">Commit: 340 opps ($16.6M)</div>
+      </div>
+      <div class="card" style="border-left:3px solid var(--green)">
+        <div class="card-title">Accountant</div>
+        <div class="card-value">$54M</div>
+        <div class="card-sub">1,541 opps &middot; Sol+: 287 opps ($14M)</div>
+        <div class="card-sub">Commit: 88 opps ($3.1M)</div>
+      </div>
+      <div class="card" style="border-left:3px solid var(--yellow)">
+        <div class="card-title">To Be Mapped / Other</div>
+        <div class="card-value">$11M</div>
+        <div class="card-sub">1,900 opps &middot; High Assess/Define volume</div>
+        <div class="card-sub" style="color:var(--red)">Campaign attribution gap</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== PANEL 4: INSIGHTS ===== -->
+  <div id="insights" class="panel">
+    <div class="insight-box">
+      <h3>1. MQL Volume Cliff in February — Investigate Immediately</h3>
+      <ul>
+        <li>MQLs dropped <strong>52% month-over-month</strong> from 28,283 (Jan) to 13,564 (Feb). This is the single biggest risk to Q3 pipeline generation.</li>
+        <li><strong>Root cause</strong>: Multiple high-volume Q2 campaigns ended (KAM Blitz, Payroll Switcher variants) and were not replaced with equivalent Q3 campaigns. The KAM Blitz alone contributed 8,493 MQLs in Dec and then went to zero.</li>
+        <li><strong>Action</strong>: Demand gen leadership should launch Q3 replacement campaigns immediately. The IES Hot List Relevvo and NBA plays are ramping but at 500–1,500 MQL scale — not enough to fill the 15K gap.</li>
+      </ul>
+    </div>
+
+    <div class="insight-box">
+      <h3>2. IES IPD Abandoner Campaigns — High Volume, Low Pipeline Conversion</h3>
+      <ul>
+        <li>The three IPD Abandoner BDR campaigns generated <strong>19,505 MQLs</strong> (27% of total) but only produced <strong>$6.1M in pipeline</strong> across 540 opps with a <strong>Sol+ rate of just 10%</strong>.</li>
+        <li>Compare to <strong>Web Managed IES</strong>: 722 opps but <strong>$118M pipeline</strong> with a 19% Sol+ rate — 20x the pipeline-per-opp efficiency.</li>
+        <li><strong>Action</strong>: Re-evaluate the IPD Abandoner audience quality. Consider tighter scoring criteria or shifting BDR capacity to higher-converting campaigns like Web Managed IES or Accountant Pod Co-Sell.</li>
+      </ul>
+    </div>
+
+    <div class="insight-box">
+      <h3>3. Accountant Channel is a Pipeline Powerhouse — Under-Invested</h3>
+      <ul>
+        <li>Accountant-driven campaigns (Pod Co-Sell + Lead Pass + Client Driven + Desk Reg) generated <strong>$54M in pipeline</strong> with a <strong>30% Sol+ rate</strong> on Co-Sell and 25% on Client Driven.</li>
+        <li>Yet Accountant MQLs are tiny: only 203 → 44 → 1,040 across the 3 months. The Feb spike to 1,040 suggests new Accountant campaigns are just starting.</li>
+        <li><strong>Action</strong>: Double down on Accountant channel. The Sol+ conversion rates are 2–3x better than BDR outbound campaigns. Expand the Virtual Connect and IES Pod Co-Sell programs.</li>
+      </ul>
+    </div>
+
+    <div class="insight-box">
+      <h3>4. Pipeline Aging Is Increasing — Deals Stalling in Assess/Solution</h3>
+      <ul>
+        <li>Average open opportunity age increased from <strong>76.8 days (Dec) to 81.5 days (Jan)</strong> and stayed at 80.7 in Feb. Opps are sitting in early stages longer.</li>
+        <li>The "No Campaign Identified" bucket has <strong>431 opps with $11.3M pipeline</strong> — these are attribution gaps that prevent campaign ROI analysis.</li>
+        <li><strong>Action</strong>: Implement pipeline velocity reviews focused on opps >60 days in Assess/Solution. Fix campaign attribution for the 1,311 "No Campaign" opps to close the measurement gap.</li>
+      </ul>
+    </div>
+
+    <div class="insight-box">
+      <h3>5. IES Renewal Opportunity — Highest Sol+ Rate, Protect This Pipeline</h3>
+      <ul>
+        <li>IES Renewal has the <strong>highest Sol+ rate at 47.6%</strong> with 88 of 185 opps in Sol+ stages and <strong>$3.8M in Commit</strong>.</li>
+        <li>This is the most efficient pipeline source — renewals convert at nearly 5x the rate of BDR-sourced campaigns.</li>
+        <li><strong>Action</strong>: Ensure renewal opps have dedicated AM coverage. Any slippage here directly impacts IES NRR. Consider a renewal-specific blitz in Q3.</li>
+      </ul>
+    </div>
+
+    <div class="insight-box">
+      <h3>6. Trade Show ROI — IFA Feb 2026 Showing Outsized Returns</h3>
+      <ul>
+        <li>The IFA Trade Show Hand Raiser campaign has only <strong>7 opps but $5.8M in pipeline</strong> — average opp size of $829K, which is 340x the overall average of $2,323.</li>
+        <li>IBS Trade Show also performing well with 51 opps and $1.6M pipeline at 43% Sol+ rate.</li>
+        <li><strong>Action</strong>: Prioritize trade show follow-up. These are high-value, high-intent leads. Ensure dedicated AMs are assigned within 48 hours of event.</li>
+      </ul>
+    </div>
+
+    <div class="section-title" style="margin-top:32px"><div class="dot" style="background:var(--accent)"></div> Resource Allocation Recommendations</div>
+    <div class="card">
+      <table>
+        <thead><tr><th>Priority</th><th>Action</th><th>Expected Impact</th><th>Timeline</th></tr></thead>
+        <tbody>
+          <tr><td><span class="badge" style="background:var(--red)">P0</span></td><td>Launch Q3 replacement campaigns to fill 15K MQL gap from ended Q2 campaigns</td><td>Restore MQL volume to 25K+/month</td><td>Immediate</td></tr>
+          <tr><td><span class="badge" style="background:var(--red)">P0</span></td><td>Fix campaign attribution — 1,311 opps ($11.3M) have no campaign tag</td><td>Accurate ROI measurement</td><td>1–2 weeks</td></tr>
+          <tr><td><span class="badge" style="background:var(--orange)">P1</span></td><td>Shift BDR capacity from IPD Abandoner (10% Sol+) to Accountant Co-Sell (30% Sol+)</td><td>2–3x improvement in pipeline quality</td><td>Next sprint</td></tr>
+          <tr><td><span class="badge" style="background:var(--orange)">P1</span></td><td>Expand Relevvo AI-scored hot list and Data Cloud targeting (new Q3 campaigns showing early promise)</td><td>Higher-quality MQLs with propensity scoring</td><td>Q3 ramp</td></tr>
+          <tr><td><span class="badge" style="background:var(--yellow)">P2</span></td><td>Pipeline velocity review for opps >60 days in Assess/Solution stages</td><td>Reduce avg open age from 81 → 65 days</td><td>Ongoing weekly</td></tr>
+          <tr><td><span class="badge" style="background:var(--yellow)">P2</span></td><td>Dedicated renewal blitz — protect 47.6% Sol+ rate pipeline</td><td>Protect $5M Commit pipeline</td><td>Q3 planning</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div style="margin-top:24px; padding:16px; background:var(--surface); border-radius:12px; border:1px solid var(--border);">
+      <div style="font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.8px; margin-bottom:8px;">Data Sources & Methodology</div>
+      <div style="font-size:12px; color:var(--muted);">
+        <strong>MQL/Channel data</strong>: <code>sales_published.rob_dashboard_revamp_final_exec_daily</code> — mm_smb_group = 'MM', year_fy = 2026, month_fy IN (5,6,7)<br>
+        <strong>Funnel metrics</strong>: <code>sales_published.salesfunnel_dg</code> — mm_smb_group = 'MM', Demand Gen + Pipeline Health sections<br>
+        <strong>Pipeline by campaign</strong>: <code>sales_published.sales_e2e_funnel_pipeline_dash</code> — Opty_Owner_Div_L5 MM filter, latest snapshot<br>
+        <strong>Lead source</strong>: <code>sales_published.sales_e2e_funnel_pivot</code> — Object_Owner_L5 MM filter, Funnel_Start months 5–7<br>
+        <strong>Fiscal mapping</strong>: FM5 = Dec 2025, FM6 = Jan 2026, FM7 = Feb 2026 (FY starts Aug 1)
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function showPanel(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+</body>
+</html>
