@@ -1,0 +1,98 @@
+{
+  "generated_at": "2026-04-01T10:00:00",
+  "current_week_544": 36,
+  "prior_week_544": 35,
+  "weeks_remaining_q3": 5,
+  "q3_start_week": 28,
+  "q3_end_week": 40,
+  "week_label": "Week 36",
+  "prior_week_label": "W35",
+  "this_week_label": "W36",
+  "targets": {
+    "Total": {
+      "IES Revenue": "$21,763,374.00",
+      "Non-IES Revenue": "$5,033,302.00",
+      "Total Revenue": "$26,796,676.00",
+      "IES Contracts": "2,190"
+    },
+    "KAM": {
+      "IES Revenue": "$6,735,501.00",
+      "Non-IES Revenue": "$1,296,048.00",
+      "Total Revenue": "$8,031,549.00",
+      "IES Contracts": "577"
+    },
+    "East": {
+      "IES Revenue": "$4,541,276.00",
+      "Non-IES Revenue": "$1,238,604.00",
+      "Total Revenue": "$5,779,880.00",
+      "IES Contracts": "455"
+    },
+    "West": {
+      "IES Revenue": "$3,633,350.00",
+      "Non-IES Revenue": "$1,021,126.00",
+      "Total Revenue": "$4,654,476.00",
+      "IES Contracts": "368"
+    },
+    "Channel": {
+      "IES Revenue": "$6,853,247.00",
+      "Non-IES Revenue": "$1,477,521.00",
+      "Total Revenue": "$8,330,768.00",
+      "IES Contracts": "787"
+    }
+  },
+  "actuals": {
+    "Total": {
+      "prior_week": {"ies_revenue": 1214034, "nonies_revenue": 362212, "ies_contracts": 128},
+      "current_week": {"ies_revenue": 0, "nonies_revenue": 0, "ies_contracts": 0},
+      "mtd": {"ies_revenue": 3362462.50, "nonies_revenue": 973096, "ies_contracts": 339},
+      "qtd": {"ies_revenue": 8232416, "nonies_revenue": 2237276, "ies_contracts": 866}
+    },
+    "KAM": {
+      "prior_week": {"ies_revenue": 224039, "nonies_revenue": 108367, "ies_contracts": 16},
+      "current_week": {"ies_revenue": 0, "nonies_revenue": 0, "ies_contracts": 0},
+      "mtd": {"ies_revenue": 0, "nonies_revenue": 0, "ies_contracts": 0},
+      "qtd": {"ies_revenue": 1488561, "nonies_revenue": 564483, "ies_contracts": 115}
+    },
+    "East": {
+      "prior_week": {"ies_revenue": 223798, "nonies_revenue": 87981, "ies_contracts": 22},
+      "current_week": {"ies_revenue": 0, "nonies_revenue": 0, "ies_contracts": 0},
+      "mtd": {"ies_revenue": 0, "nonies_revenue": 0, "ies_contracts": 0},
+      "qtd": {"ies_revenue": 1111762, "nonies_revenue": 1085492, "ies_contracts": 140}
+    },
+    "West": {
+      "prior_week": {"ies_revenue": 144924, "nonies_revenue": 63441, "ies_contracts": 13},
+      "current_week": {"ies_revenue": 0, "nonies_revenue": 0, "ies_contracts": 0},
+      "mtd": {"ies_revenue": 0, "nonies_revenue": 0, "ies_contracts": 0},
+      "qtd": {"ies_revenue": 938632, "nonies_revenue": 857125, "ies_contracts": 100}
+    },
+    "Channel": {
+      "prior_week": {"ies_revenue": 328715, "nonies_revenue": 102423, "ies_contracts": 24},
+      "current_week": {"ies_revenue": 0, "nonies_revenue": 0, "ies_contracts": 0},
+      "mtd": {"ies_revenue": 0, "nonies_revenue": 0, "ies_contracts": 0},
+      "qtd": {"ies_revenue": 2541136, "nonies_revenue": 867277, "ies_contracts": 292}
+    }
+  },
+  "plan_weekly": {
+    "Total": {
+      "prior_week": {"ies_revenue": 1626467, "nonies_revenue": 392692, "ies_contracts": 166},
+      "this_week": {"ies_revenue": 1734259, "nonies_revenue": 377990, "ies_contracts": 174}
+    },
+    "KAM": {
+      "prior_week": {"ies_revenue": 503372, "nonies_revenue": 101790, "ies_contracts": 44},
+      "this_week": {"ies_revenue": 536734, "nonies_revenue": 98697, "ies_contracts": 47}
+    },
+    "East": {
+      "prior_week": {"ies_revenue": 339565, "nonies_revenue": 95684, "ies_contracts": 34},
+      "this_week": {"ies_revenue": 362073, "nonies_revenue": 91032, "ies_contracts": 37}
+    },
+    "West": {
+      "prior_week": {"ies_revenue": 271359, "nonies_revenue": 78695, "ies_contracts": 28},
+      "this_week": {"ies_revenue": 289345, "nonies_revenue": 74771, "ies_contracts": 30}
+    },
+    "Channel": {
+      "prior_week": {"ies_revenue": 512171, "nonies_revenue": 116523, "ies_contracts": 59},
+      "this_week": {"ies_revenue": 546108, "nonies_revenue": 21004, "ies_contracts": 60}
+    }
+  },
+  "big_deals": []
+}
