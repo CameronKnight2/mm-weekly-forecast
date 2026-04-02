@@ -418,49 +418,81 @@ function renderBookings() {
     </tbody></table></div>`;
 
   // --- Q3 ---
-  function q3BkRow(label, rk, planVal, actualsVal) {
-    const plan = parseDollar(getEdit('bk',rk,'q3_plan') || planVal);
-    const actuals = parseDollar(getEdit('bk',rk,'q3_actuals') || actualsVal);
-    const commit = parseDollar(getEdit('bk',rk,'q3_commit'));
-    const high = parseDollar(getEdit('bk',rk,'q3_high'));
-    const low = parseDollar(getEdit('bk',rk,'q3_low'));
-    const itp = plan ? commit / plan : null;
+  function q3BkRow(label, rk, planVal, actualsVal, isDollar) {
+    const fmt = isDollar !== false;
+    const parse = fmt ? parseDollar : parseNum;
+    const fmtFn = fmt ? fmtDollar : fmtNum;
+    const plan = parse(getEdit('bk',rk,'q3_plan') || planVal);
+    const actuals = parse(getEdit('bk',rk,'q3_actuals') || actualsVal);
+    const signed = parse(getEdit('bk',rk,'q3_signed'));
+    const commit = parse(getEdit('bk',rk,'q3_commit'));
+    const high = parse(getEdit('bk',rk,'q3_high'));
+    const low = parse(getEdit('bk',rk,'q3_low'));
+    const billedItp = plan ? actuals / plan : null;
+    const commitItp = plan ? commit / plan : null;
+    const highPct = plan ? high / plan : null;
+    const lowPct = plan ? low / plan : null;
+    const remPlan = plan - actuals;
+    const remCommit = commit - actuals;
     return `<tr>
       <td class="label">${label}</td>
-      <td class="num">${editInput('bk',rk,'q3_plan',{placeholder:'$0',prefill:fmtDollar(planVal)})}</td>
-      <td class="num">${editInput('bk',rk,'q3_actuals',{placeholder:'$0',prefill:fmtDollar(actualsVal)})}</td>
-      <td class="num">${editInput('bk',rk,'q3_commit',{placeholder:'$0',leader:true})}</td>
-      <td class="num">${editInput('bk',rk,'q3_high',{placeholder:'$0',leader:true})}</td>
-      <td class="num">${editInput('bk',rk,'q3_low',{placeholder:'$0',leader:true})}</td>
-      <td class="num">${calcDisplay(itp,'%')}</td>
+      <td class="num">${editInput('bk',rk,'q3_plan',{placeholder: fmt?'$0':'0',prefill:fmtFn(planVal)})}</td>
+      <td class="num">${editInput('bk',rk,'q3_actuals',{placeholder: fmt?'$0':'0',prefill:fmtFn(actualsVal)})}</td>
+      <td class="num">${editInput('bk',rk,'q3_signed',{placeholder: fmt?'$0':'0'})}</td>
+      <td class="num">${editInput('bk',rk,'q3_commit',{placeholder: fmt?'$0':'0',leader:true})}</td>
+      <td class="num">${editInput('bk',rk,'q3_high',{placeholder: fmt?'$0':'0',leader:true})}</td>
+      <td class="num">${editInput('bk',rk,'q3_low',{placeholder: fmt?'$0':'0',leader:true})}</td>
+      <td class="num">${calcDisplay(billedItp,'%')}</td>
+      <td class="num">${calcDisplay(commitItp,'%')}</td>
+      <td class="num">${calcDisplay(highPct,'%')}</td>
+      <td class="num">${calcDisplay(lowPct,'%')}</td>
+      <td class="num">${calcDisplay(remPlan, fmt?'$':'#')}</td>
+      <td class="num">${calcDisplay(remCommit, fmt?'$':'#')}</td>
     </tr>`;
   }
 
   const ctQ3PlanVal = parseNum(getTargetRaw('IES Contracts'));
   const ctQ3ActVal = getActuals('qtd','ies_contracts');
-  const ctQ3Plan = parseNum(getEdit('ct','ies','q3_plan') || ctQ3PlanVal);
-  const ctQ3Commit = parseNum(getEdit('ct','ies','q3_commit'));
-  const ctQ3High = parseNum(getEdit('ct','ies','q3_high'));
-  const ctQ3Low = parseNum(getEdit('ct','ies','q3_low'));
-  const ctQ3Itp = ctQ3Plan ? ctQ3Commit / ctQ3Plan : null;
 
   const q3Card = `<div class="card"><div class="card-header">Q3</div>
     <table class="ftable"><thead><tr>
-      <th></th><th class="num">Plan</th><th class="num">Actuals</th>
-      <th class="num">Commit</th><th class="num">High</th><th class="num">Low</th><th class="num">Commit ITP</th>
+      <th></th><th class="num">Plan</th><th class="num">Billed</th><th class="num">Signed</th>
+      <th class="num">Commit</th><th class="num">High</th><th class="num">Low</th>
+      <th class="num">Billed ITP</th><th class="num">Commit ITP</th><th class="num">High %</th><th class="num">Low %</th>
+      <th class="num">Rem. vs Plan</th><th class="num">Rem. vs Commit</th>
     </tr></thead><tbody>
-      ${q3BkRow('IES Revenue','ies',getTarget('IES Revenue'),getActuals('qtd','ies_revenue'))}
-      ${q3BkRow('Non-IES Revenue','nonies',getTarget('Non-IES Revenue'),getActuals('qtd','nonies_revenue'))}
-      <tr style="height:6px"><td colspan="7"></td></tr>
-      <tr>
-        <td class="label">IES Contracts</td>
-        <td class="num">${editInput('ct','ies','q3_plan',{placeholder:'0',prefill:fmtNum(ctQ3PlanVal)})}</td>
-        <td class="num">${editInput('ct','ies','q3_actuals',{placeholder:'0',prefill:fmtNum(ctQ3ActVal)})}</td>
-        <td class="num">${editInput('ct','ies','q3_commit',{placeholder:'0',leader:true})}</td>
-        <td class="num">${editInput('ct','ies','q3_high',{placeholder:'0',leader:true})}</td>
-        <td class="num">${editInput('ct','ies','q3_low',{placeholder:'0',leader:true})}</td>
-        <td class="num">${calcDisplay(ctQ3Itp,'%')}</td>
-      </tr>
+      ${q3BkRow('IES Revenue','ies',getTarget('IES Revenue'),getActuals('qtd','ies_revenue'),true)}
+      ${q3BkRow('Non-IES Revenue','nonies',getTarget('Non-IES Revenue'),getActuals('qtd','nonies_revenue'),true)}
+      <tr style="height:6px"><td colspan="13"></td></tr>
+      ${(function(){
+        const plan = parseNum(getEdit('ct','ies','q3_plan') || ctQ3PlanVal);
+        const actuals = parseNum(getEdit('ct','ies','q3_actuals') || ctQ3ActVal);
+        const signed = parseNum(getEdit('ct','ies','q3_signed'));
+        const commit = parseNum(getEdit('ct','ies','q3_commit'));
+        const high = parseNum(getEdit('ct','ies','q3_high'));
+        const low = parseNum(getEdit('ct','ies','q3_low'));
+        const billedItp = plan ? actuals / plan : null;
+        const commitItp = plan ? commit / plan : null;
+        const highPct = plan ? high / plan : null;
+        const lowPct = plan ? low / plan : null;
+        const remPlan = plan - actuals;
+        const remCommit = commit - actuals;
+        return '<tr>' +
+          '<td class="label">IES Contracts</td>' +
+          '<td class="num">'+editInput('ct','ies','q3_plan',{placeholder:'0',prefill:fmtNum(ctQ3PlanVal)})+'</td>' +
+          '<td class="num">'+editInput('ct','ies','q3_actuals',{placeholder:'0',prefill:fmtNum(ctQ3ActVal)})+'</td>' +
+          '<td class="num">'+editInput('ct','ies','q3_signed',{placeholder:'0'})+'</td>' +
+          '<td class="num">'+editInput('ct','ies','q3_commit',{placeholder:'0',leader:true})+'</td>' +
+          '<td class="num">'+editInput('ct','ies','q3_high',{placeholder:'0',leader:true})+'</td>' +
+          '<td class="num">'+editInput('ct','ies','q3_low',{placeholder:'0',leader:true})+'</td>' +
+          '<td class="num">'+calcDisplay(billedItp,'%')+'</td>' +
+          '<td class="num">'+calcDisplay(commitItp,'%')+'</td>' +
+          '<td class="num">'+calcDisplay(highPct,'%')+'</td>' +
+          '<td class="num">'+calcDisplay(lowPct,'%')+'</td>' +
+          '<td class="num">'+calcDisplay(remPlan,'#')+'</td>' +
+          '<td class="num">'+calcDisplay(remCommit,'#')+'</td>' +
+          '</tr>';
+      })()}
     </tbody></table></div>`;
 
   grid.innerHTML = priorCard + thisCard + q3Card;
