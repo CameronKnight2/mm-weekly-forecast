@@ -46,6 +46,9 @@ h1 span { color: var(--accent2); }
 .forecast-grid { display: grid; gap: 16px; margin-bottom: 20px; }
 .forecast-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
 .forecast-grid.cols-2 { grid-template-columns: 1fr 1fr; }
+.forecast-grid.cols-1 { grid-template-columns: 1fr; }
+.forecast-grid.cols-1-2 { grid-template-columns: 1fr; }
+.forecast-grid.cols-1-2 .tw-q3-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
 .card-header { padding: 10px 14px; background: var(--surface2); border-bottom: 1px solid var(--border); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--accent2); }
@@ -115,7 +118,7 @@ h1 span { color: var(--accent2); }
 @media (max-width: 1200px) {
   .forecast-grid.cols-3 { grid-template-columns: repeat(2, 1fr); }
 }
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .forecast-grid.cols-3, .forecast-grid.cols-2 { grid-template-columns: 1fr; }
 }
 </style>
@@ -153,10 +156,10 @@ h1 span { color: var(--accent2); }
 
   <div id="forecast" class="panel active">
     <div class="section-hdr"><div class="dot" style="background:var(--accent)"></div><h2>Bookings</h2></div>
-    <div class="forecast-grid cols-3" id="bookingsGrid"></div>
+    <div class="forecast-grid cols-1" id="bookingsGrid"></div>
 
     <div class="section-hdr"><div class="dot" style="background:var(--green)"></div><h2>Contracts</h2></div>
-    <div class="forecast-grid cols-3" id="contractsGrid"></div>
+    <div class="forecast-grid cols-1" id="contractsGrid"></div>
 
     <div class="section-hdr"><div class="dot" style="background:var(--cyan)"></div><h2>APRC &amp; Win Rate</h2></div>
     <div class="forecast-grid cols-2" id="aprcGrid"></div>
@@ -406,7 +409,7 @@ function renderBookings() {
       ${q3Row('Non-IES','nonies',getTarget('Non-IES Revenue'),getActuals('qtd','nonies_revenue'))}
     </tbody></table></div>`;
 
-  grid.innerHTML = priorCard + thisCard + q3Card;
+  grid.innerHTML = priorCard + `<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">${thisCard}${q3Card}</div>`;
 }
 
 // =========================================================================
@@ -488,7 +491,7 @@ function renderContracts() {
       </tr>
     </tbody></table></div>`;
 
-  grid.innerHTML = priorCard + thisCard + q3Card;
+  grid.innerHTML = priorCard + `<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">${thisCard}${q3Card}</div>`;
 }
 
 // =========================================================================
