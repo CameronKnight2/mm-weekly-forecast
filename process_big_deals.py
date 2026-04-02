@@ -32,13 +32,13 @@ for r in rows:
     except (ValueError, TypeError):
         inc = 0
 
-    acct = r.get('account_name', '')
+    acct = r.get('account_name', '') or ''
     if acct.startswith('KEY_IDPS'):
         acct = ''
-    mgr = r.get('manager_name', '')
+    mgr = r.get('manager_name', '') or ''
     if mgr.startswith('KEY_IDPS'):
         mgr = ''
-    owner = r.get('opportunity_owner', '')
+    owner = r.get('opportunity_owner', '') or r.get('owner_name', '') or ''
     if owner.startswith('KEY_IDPS'):
         owner = ''
 
