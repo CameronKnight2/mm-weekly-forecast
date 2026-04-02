@@ -639,7 +639,7 @@ function renderBigDeals() {
     const commitVal = getEdit('deals', dealKey, 'commit_upside') || d.commit_upside || '';
     const oppId = d.opportunity_id || '';
     const oppLink = oppId
-      ? `<a href="https://intuit.my.salesforce.com/${escHtml(oppId)}" target="_blank" rel="noopener" style="color:var(--accent2);text-decoration:none" title="Open in Salesforce">${escHtml(d.opportunity_name)}</a>`
+      ? `<a href="https://intuitcrm.lightning.force.com/lightning/r/Opportunity/${escHtml(oppId)}/view" target="_blank" rel="noopener" style="color:var(--accent2);text-decoration:none" title="Open in Salesforce">${escHtml(d.opportunity_name)}</a>`
       : escHtml(d.opportunity_name);
     return `<tr>
       <td>${escHtml(d.account_name)}</td>
