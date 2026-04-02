@@ -89,6 +89,7 @@ h1 span { color: var(--accent2); }
 .deals-table th { text-align: left; padding: 8px 10px; border-bottom: 2px solid var(--border); color: var(--muted); font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; position: sticky; top: 0; background: var(--surface); white-space: nowrap; }
 .deals-table td { padding: 7px 10px; border-bottom: 1px solid var(--border); }
 .deals-table tr:hover td { background: var(--surface2); }
+.deals-table a:hover { text-decoration: underline !important; }
 .deals-table .num { text-align: right; }
 .scroll-wrap { max-height: 600px; overflow-y: auto; border-radius: 12px; }
 .scroll-wrap::-webkit-scrollbar { width: 6px; }
@@ -155,11 +156,8 @@ h1 span { color: var(--accent2); }
   </div>
 
   <div id="forecast" class="panel active">
-    <div class="section-hdr"><div class="dot" style="background:var(--accent)"></div><h2>Bookings</h2></div>
+    <div class="section-hdr"><div class="dot" style="background:var(--accent)"></div><h2>Bookings &amp; Contracts</h2></div>
     <div class="forecast-grid cols-1" id="bookingsGrid"></div>
-
-    <div class="section-hdr"><div class="dot" style="background:var(--green)"></div><h2>Contracts</h2></div>
-    <div class="forecast-grid cols-1" id="contractsGrid"></div>
 
     <div class="section-hdr"><div class="dot" style="background:var(--cyan)"></div><h2>APRC &amp; Win Rate</h2></div>
     <div class="forecast-grid cols-2" id="aprcGrid"></div>
@@ -317,15 +315,15 @@ function getTarget(metric) { return parseDollar(DATA?.targets?.[DIVISION]?.[metr
 function getTargetRaw(metric) { return DATA?.targets?.[DIVISION]?.[metric] || ''; }
 
 // =========================================================================
-// BOOKINGS
+// BOOKINGS & CONTRACTS (merged)
 // =========================================================================
 function renderBookings() {
   const grid = document.getElementById('bookingsGrid');
   const pw = DATA.prior_week_544 || 35;
   const cw = DATA.current_week_544 || 36;
 
-  // Prior Week — all editable, plan/billed prefilled from data
-  function pwRow(label, rk, planVal, billedVal) {
+  // --- Helper: Prior Week booking row ---
+  function pwBkRow(label, rk, planVal, billedVal) {
     const plan = parseDollar(getEdit('bk',rk,'pw_plan') || planVal);
     const billed = parseDollar(getEdit('bk',rk,'pw_billed') || billedVal);
     const signed = parseDollar(getEdit('bk',rk,'pw_signed'));
@@ -345,18 +343,40 @@ function renderBookings() {
     </tr>`;
   }
 
+  // Prior Week contracts row
+  const ctPwPlanVal = getPlan('prior_week','ies_contracts');
+  const ctPwBilledVal = getActuals('prior_week','ies_contracts');
+  const ctPwPlan = parseNum(getEdit('ct','ies','pw_plan') || ctPwPlanVal);
+  const ctPwBilled = parseNum(getEdit('ct','ies','pw_billed') || ctPwBilledVal);
+  const ctPwSigned = parseNum(getEdit('ct','ies','pw_signed'));
+  const ctPwCommit = parseNum(getEdit('ct','ies','pw_commit'));
+  const ctPwBilledItp = ctPwPlan ? ctPwBilled / ctPwPlan : null;
+  const ctPwItf = ctPwCommit ? ctPwBilled / ctPwCommit : null;
+  const ctPwSignedItp = ctPwPlan ? ctPwSigned / ctPwPlan : null;
+
   const priorCard = `<div class="card"><div class="card-header">Prior Week (W${pw})</div>
     <table class="ftable"><thead><tr>
       <th></th><th class="num">Plan</th><th class="num">Billed</th>
       <th class="num">Signed</th><th class="num">Commit</th>
       <th class="num">Billed ITP</th><th class="num">ITF</th><th class="num">Signed ITP</th>
     </tr></thead><tbody>
-      ${pwRow('IES','ies',getPlan('prior_week','ies_revenue'),getActuals('prior_week','ies_revenue'))}
-      ${pwRow('Non-IES','nonies',getPlan('prior_week','nonies_revenue'),getActuals('prior_week','nonies_revenue'))}
+      ${pwBkRow('IES Revenue','ies',getPlan('prior_week','ies_revenue'),getActuals('prior_week','ies_revenue'))}
+      ${pwBkRow('Non-IES Revenue','nonies',getPlan('prior_week','nonies_revenue'),getActuals('prior_week','nonies_revenue'))}
+      <tr style="height:6px"><td colspan="8"></td></tr>
+      <tr>
+        <td class="label">IES Contracts</td>
+        <td class="num">${editInput('ct','ies','pw_plan',{placeholder:'0',prefill:fmtNum(ctPwPlanVal)})}</td>
+        <td class="num">${editInput('ct','ies','pw_billed',{placeholder:'0',prefill:fmtNum(ctPwBilledVal)})}</td>
+        <td class="num">${editInput('ct','ies','pw_signed',{placeholder:'0'})}</td>
+        <td class="num">${editInput('ct','ies','pw_commit',{placeholder:'0'})}</td>
+        <td class="num">${calcDisplay(ctPwBilledItp,'%')}</td>
+        <td class="num">${calcDisplay(ctPwItf,'%')}</td>
+        <td class="num">${calcDisplay(ctPwSignedItp,'%')}</td>
+      </tr>
     </tbody></table></div>`;
 
-  // This Week — commit/high/low are leader fields
-  function twRow(label, rk, planVal) {
+  // --- This Week ---
+  function twBkRow(label, rk, planVal) {
     const plan = parseDollar(getEdit('bk',rk,'tw_plan') || planVal);
     const commit = parseDollar(getEdit('bk',rk,'tw_commit'));
     const high = parseDollar(getEdit('bk',rk,'tw_high'));
@@ -372,17 +392,33 @@ function renderBookings() {
     </tr>`;
   }
 
+  const ctTwPlanVal = getPlan('this_week','ies_contracts');
+  const ctTwPlan = parseNum(getEdit('ct','ies','tw_plan') || ctTwPlanVal);
+  const ctTwCommit = parseNum(getEdit('ct','ies','tw_commit'));
+  const ctTwHigh = parseNum(getEdit('ct','ies','tw_high'));
+  const ctTwLow = parseNum(getEdit('ct','ies','tw_low'));
+  const ctTwItp = ctTwPlan ? ctTwCommit / ctTwPlan : null;
+
   const thisCard = `<div class="card"><div class="card-header">This Week (W${cw})</div>
     <table class="ftable"><thead><tr>
       <th></th><th class="num">Plan</th><th class="num">Commit</th>
       <th class="num">High</th><th class="num">Low</th><th class="num">Commit ITP</th>
     </tr></thead><tbody>
-      ${twRow('IES','ies',getPlan('this_week','ies_revenue'))}
-      ${twRow('Non-IES','nonies',getPlan('this_week','nonies_revenue'))}
+      ${twBkRow('IES Revenue','ies',getPlan('this_week','ies_revenue'))}
+      ${twBkRow('Non-IES Revenue','nonies',getPlan('this_week','nonies_revenue'))}
+      <tr style="height:6px"><td colspan="6"></td></tr>
+      <tr>
+        <td class="label">IES Contracts</td>
+        <td class="num">${editInput('ct','ies','tw_plan',{placeholder:'0',prefill:fmtNum(ctTwPlanVal)})}</td>
+        <td class="num">${editInput('ct','ies','tw_commit',{placeholder:'0',leader:true})}</td>
+        <td class="num">${editInput('ct','ies','tw_high',{placeholder:'0',leader:true})}</td>
+        <td class="num">${editInput('ct','ies','tw_low',{placeholder:'0',leader:true})}</td>
+        <td class="num">${calcDisplay(ctTwItp,'%')}</td>
+      </tr>
     </tbody></table></div>`;
 
-  // Q3 — plan/actuals prefilled, commit/high/low are leader fields
-  function q3Row(label, rk, planVal, actualsVal) {
+  // --- Q3 ---
+  function q3BkRow(label, rk, planVal, actualsVal) {
     const plan = parseDollar(getEdit('bk',rk,'q3_plan') || planVal);
     const actuals = parseDollar(getEdit('bk',rk,'q3_actuals') || actualsVal);
     const commit = parseDollar(getEdit('bk',rk,'q3_commit'));
@@ -400,98 +436,34 @@ function renderBookings() {
     </tr>`;
   }
 
+  const ctQ3PlanVal = parseNum(getTargetRaw('IES Contracts'));
+  const ctQ3ActVal = getActuals('qtd','ies_contracts');
+  const ctQ3Plan = parseNum(getEdit('ct','ies','q3_plan') || ctQ3PlanVal);
+  const ctQ3Commit = parseNum(getEdit('ct','ies','q3_commit'));
+  const ctQ3High = parseNum(getEdit('ct','ies','q3_high'));
+  const ctQ3Low = parseNum(getEdit('ct','ies','q3_low'));
+  const ctQ3Itp = ctQ3Plan ? ctQ3Commit / ctQ3Plan : null;
+
   const q3Card = `<div class="card"><div class="card-header">Q3</div>
     <table class="ftable"><thead><tr>
       <th></th><th class="num">Plan</th><th class="num">Actuals</th>
       <th class="num">Commit</th><th class="num">High</th><th class="num">Low</th><th class="num">Commit ITP</th>
     </tr></thead><tbody>
-      ${q3Row('IES','ies',getTarget('IES Revenue'),getActuals('qtd','ies_revenue'))}
-      ${q3Row('Non-IES','nonies',getTarget('Non-IES Revenue'),getActuals('qtd','nonies_revenue'))}
-    </tbody></table></div>`;
-
-  grid.innerHTML = priorCard + `<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">${thisCard}${q3Card}</div>`;
-}
-
-// =========================================================================
-// CONTRACTS
-// =========================================================================
-function renderContracts() {
-  const grid = document.getElementById('contractsGrid');
-  const pw = DATA.prior_week_544 || 35;
-  const cw = DATA.current_week_544 || 36;
-
-  const priorPlanVal = getPlan('prior_week','ies_contracts');
-  const priorBilledVal = getActuals('prior_week','ies_contracts');
-  const priorPlan = parseNum(getEdit('ct','ies','pw_plan') || priorPlanVal);
-  const priorBilled = parseNum(getEdit('ct','ies','pw_billed') || priorBilledVal);
-  const priorSigned = parseNum(getEdit('ct','ies','pw_signed'));
-  const priorCommit = parseNum(getEdit('ct','ies','pw_commit'));
-  const billedItp = priorPlan ? priorBilled / priorPlan : null;
-  const itf = priorCommit ? priorBilled / priorCommit : null;
-  const signedItp = priorPlan ? priorSigned / priorPlan : null;
-
-  const priorCard = `<div class="card"><div class="card-header">Prior Week Contracts (W${pw})</div>
-    <table class="ftable"><thead><tr>
-      <th></th><th class="num">Plan</th><th class="num">Billed</th>
-      <th class="num">Signed</th><th class="num">Commit</th>
-      <th class="num">Billed ITP</th><th class="num">ITF</th><th class="num">Signed ITP</th>
-    </tr></thead><tbody>
-      <tr><td class="label">IES</td>
-        <td class="num">${editInput('ct','ies','pw_plan',{placeholder:'0',prefill:fmtNum(priorPlanVal)})}</td>
-        <td class="num">${editInput('ct','ies','pw_billed',{placeholder:'0',prefill:fmtNum(priorBilledVal)})}</td>
-        <td class="num">${editInput('ct','ies','pw_signed',{placeholder:'0'})}</td>
-        <td class="num">${editInput('ct','ies','pw_commit',{placeholder:'0'})}</td>
-        <td class="num">${calcDisplay(billedItp,'%')}</td>
-        <td class="num">${calcDisplay(itf,'%')}</td>
-        <td class="num">${calcDisplay(signedItp,'%')}</td>
-      </tr>
-    </tbody></table></div>`;
-
-  const twPlanVal = getPlan('this_week','ies_contracts');
-  const twPlan = parseNum(getEdit('ct','ies','tw_plan') || twPlanVal);
-  const twCommit = parseNum(getEdit('ct','ies','tw_commit'));
-  const twHigh = parseNum(getEdit('ct','ies','tw_high'));
-  const twLow = parseNum(getEdit('ct','ies','tw_low'));
-  const twItp = twPlan ? twCommit / twPlan : null;
-
-  const thisCard = `<div class="card"><div class="card-header">This Week Contracts (W${cw})</div>
-    <table class="ftable"><thead><tr>
-      <th></th><th class="num">Plan</th><th class="num">Commit</th>
-      <th class="num">High</th><th class="num">Low</th><th class="num">Commit ITP</th>
-    </tr></thead><tbody>
-      <tr><td class="label">IES</td>
-        <td class="num">${editInput('ct','ies','tw_plan',{placeholder:'0',prefill:fmtNum(twPlanVal)})}</td>
-        <td class="num">${editInput('ct','ies','tw_commit',{placeholder:'0',leader:true})}</td>
-        <td class="num">${editInput('ct','ies','tw_high',{placeholder:'0',leader:true})}</td>
-        <td class="num">${editInput('ct','ies','tw_low',{placeholder:'0',leader:true})}</td>
-        <td class="num">${calcDisplay(twItp,'%')}</td>
-      </tr>
-    </tbody></table></div>`;
-
-  const q3PlanVal = parseNum(getTargetRaw('IES Contracts'));
-  const q3ActVal = getActuals('qtd','ies_contracts');
-  const q3Plan = parseNum(getEdit('ct','ies','q3_plan') || q3PlanVal);
-  const q3Commit = parseNum(getEdit('ct','ies','q3_commit'));
-  const q3High = parseNum(getEdit('ct','ies','q3_high'));
-  const q3Low = parseNum(getEdit('ct','ies','q3_low'));
-  const q3Itp = q3Plan ? q3Commit / q3Plan : null;
-
-  const q3Card = `<div class="card"><div class="card-header">Q3 Contracts</div>
-    <table class="ftable"><thead><tr>
-      <th></th><th class="num">Plan</th><th class="num">Actuals</th>
-      <th class="num">Commit</th><th class="num">High</th><th class="num">Low</th><th class="num">Commit ITP</th>
-    </tr></thead><tbody>
-      <tr><td class="label">IES</td>
-        <td class="num">${editInput('ct','ies','q3_plan',{placeholder:'0',prefill:fmtNum(q3PlanVal)})}</td>
-        <td class="num">${editInput('ct','ies','q3_actuals',{placeholder:'0',prefill:fmtNum(q3ActVal)})}</td>
+      ${q3BkRow('IES Revenue','ies',getTarget('IES Revenue'),getActuals('qtd','ies_revenue'))}
+      ${q3BkRow('Non-IES Revenue','nonies',getTarget('Non-IES Revenue'),getActuals('qtd','nonies_revenue'))}
+      <tr style="height:6px"><td colspan="7"></td></tr>
+      <tr>
+        <td class="label">IES Contracts</td>
+        <td class="num">${editInput('ct','ies','q3_plan',{placeholder:'0',prefill:fmtNum(ctQ3PlanVal)})}</td>
+        <td class="num">${editInput('ct','ies','q3_actuals',{placeholder:'0',prefill:fmtNum(ctQ3ActVal)})}</td>
         <td class="num">${editInput('ct','ies','q3_commit',{placeholder:'0',leader:true})}</td>
         <td class="num">${editInput('ct','ies','q3_high',{placeholder:'0',leader:true})}</td>
         <td class="num">${editInput('ct','ies','q3_low',{placeholder:'0',leader:true})}</td>
-        <td class="num">${calcDisplay(q3Itp,'%')}</td>
+        <td class="num">${calcDisplay(ctQ3Itp,'%')}</td>
       </tr>
     </tbody></table></div>`;
 
-  grid.innerHTML = priorCard + `<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">${thisCard}${q3Card}</div>`;
+  grid.innerHTML = priorCard + thisCard + q3Card;
 }
 
 // =========================================================================
@@ -633,9 +605,13 @@ function renderBigDeals() {
   let rows = deals.map((d, i) => {
     const dealKey = (d.opportunity_name || '').replace(/[|'"]/g,'_').substring(0,40) + '_' + i;
     const commitVal = getEdit('deals', dealKey, 'commit_upside') || d.commit_upside || '';
+    const oppId = d.opportunity_id || '';
+    const oppLink = oppId
+      ? `<a href="https://intuit.my.salesforce.com/${escHtml(oppId)}" target="_blank" rel="noopener" style="color:var(--accent2);text-decoration:none" title="Open in Salesforce">${escHtml(d.opportunity_name)}</a>`
+      : escHtml(d.opportunity_name);
     return `<tr>
       <td>${escHtml(d.account_name)}</td>
-      <td>${escHtml(d.opportunity_name)}</td>
+      <td>${oppLink}</td>
       <td>${escHtml(d.division)}</td>
       <td>${escHtml(d.manager)}</td>
       <td>${escHtml(d.owner)}</td>
@@ -661,7 +637,6 @@ function renderBigDeals() {
 
 function renderAll() {
   renderBookings();
-  renderContracts();
   renderAPRC();
   renderPipeline();
   renderBigDeals();

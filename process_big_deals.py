@@ -44,7 +44,10 @@ for r in rows:
 
     close = str(r.get('close_date', ''))[:10]
 
+    opp_id = r.get('opportunity_id', '') or ''
+
     big_deals.append({
+        'opportunity_id': opp_id,
         'account_name': acct,
         'opportunity_name': r.get('opportunity_name', ''),
         'division': division,
