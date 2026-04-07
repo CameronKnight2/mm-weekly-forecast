@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MM Sales Weekly Forecast</title>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -173,11 +174,47 @@ h1 span { color: var(--intuit-blue); }
   </div>
 
   <div class="tabs">
-    <button class="tab active" onclick="showTab('forecast',this)">Forecast</button>
+    <button class="tab active" onclick="showTab('agenda',this)">Agenda</button>
+    <button class="tab" onclick="showTab('forecast',this)">Forecast</button>
     <button class="tab" onclick="showTab('bigdeals',this)">Big Deals</button>
   </div>
 
-  <div id="forecast" class="panel active">
+  <div id="agenda" class="panel active">
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-header">This Week's Schedule</div>
+      <div style="padding:16px 20px;font-size:14px;font-weight:700;color:var(--text)">
+        4/13 &mdash; Ashley 9&ndash;10
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">MM Forecast Call Agenda &mdash; 90 min</div>
+      <div style="padding:16px 20px;font-size:13px;line-height:1.6;color:var(--text)">
+        <p style="margin-bottom:12px;color:var(--text-secondary);font-size:12px">
+          <strong>Purpose:</strong> Align the full MM org on current performance to plan, the current week's commitments, and quarterly trajectory in a 90-minute action-oriented solution session.
+        </p>
+        <table class="ftable" style="margin-bottom:20px">
+          <thead><tr>
+            <th>Time</th><th>Section</th><th>Owner</th><th style="text-align:right">Minutes</th>
+          </tr></thead>
+          <tbody>
+            <tr><td>0:00 – 0:05</td><td class="label">Performance Review & Forecast Summary</td><td>Sales Ops / Sales Leader</td><td style="text-align:right">5</td></tr>
+            <tr><td>0:05 – 0:15</td><td class="label">BDR — Demand Gen & Pipeline Creation</td><td>BDR Leader</td><td style="text-align:right">10</td></tr>
+            <tr><td>0:15 – 0:25</td><td class="label">KAM — Segment Forecast</td><td>KAM Lead</td><td style="text-align:right">10</td></tr>
+            <tr><td>0:25 – 0:35</td><td class="label">Channel — Segment Forecast</td><td>Channel Lead</td><td style="text-align:right">10</td></tr>
+            <tr><td>0:35 – 0:45</td><td class="label">East — Segment Forecast</td><td>East Lead</td><td style="text-align:right">10</td></tr>
+            <tr><td>0:45 – 0:55</td><td class="label">West — Segment Forecast</td><td>West Lead</td><td style="text-align:right">10</td></tr>
+            <tr><td>0:55 – 1:05</td><td class="label">Renewals — Outlook & Forecast</td><td>Renewals Lead</td><td style="text-align:right">10</td></tr>
+            <tr><td>1:05 – 1:15</td><td class="label">Risks, Disruptions & Insights</td><td>Sales Ops</td><td style="text-align:right">10</td></tr>
+            <tr><td>1:15 – 1:25</td><td class="label">Wrap-up — Action Items & Decisions</td><td>Sales Ops / Sales Leader</td><td style="text-align:right">10</td></tr>
+            <tr><td>1:25 – 1:30</td><td style="color:var(--muted)">Buffer (protected)</td><td></td><td style="text-align:right">5</td></tr>
+          </tbody>
+        </table>
+        <div id="agendaDetails"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="forecast" class="panel">
     <div class="section-hdr"><div class="dot" style="background:var(--intuit-blue)"></div><h2>Bookings &amp; Contracts</h2></div>
     <div class="forecast-grid cols-1" id="bookingsGrid"></div>
 
@@ -610,8 +647,8 @@ function renderPipeline() {
     </tr>`;
   }
 
-  function pipeCard(title, section) {
-    return `<div class="card"><div class="card-header">${title} — By Stage</div>
+  function pipeCard(title, section, showCreated) {
+    let html = `<div class="card"><div class="card-header">${title} — By Stage</div>
       <table class="ftable"><thead><tr><th>Stage</th><th class="num">Pipeline</th><th class="num">Opps</th><th class="num">Commit %</th><th class="num">Upside %</th></tr></thead><tbody>
         ${stages.map(s => pipeRow(s, s.toLowerCase(), section, s==='Total')).join('')}
       </tbody></table>
@@ -621,22 +658,26 @@ function renderPipeline() {
           const k = s.replace(/[$, +k]/g,'').toLowerCase();
           return sizeRow(s, k, section, s==='Total');
         }).join('')}
-      </tbody></table>
-      <div class="card-header" style="margin-top:2px">Pipeline Created</div>
+      </tbody></table>`;
+    if (showCreated !== false) {
+      html += `<div class="card-header" style="margin-top:2px">Pipeline Created</div>
       <table class="ftable"><thead><tr><th></th><th class="num">Pipeline</th><th class="num">Per Week</th></tr></thead><tbody>
         <tr><td class="label">Total</td>
           <td class="num">${editInput('pipecreated','total',section+'_pipe',{placeholder:'$0'})}</td>
           <td class="num">${editInput('pipecreated','total',section+'_perweek',{placeholder:'$0'})}</td>
         </tr>
-      </tbody></table></div>`;
+      </tbody></table>`;
+    }
+    html += `</div>`;
+    return html;
   }
 
   const pw = DATA.prior_week_544 || 35;
   const cw = DATA.current_week_544 || 36;
   grid.innerHTML =
-    pipeCard(`Prior Week (W${pw})`, 'pw') +
-    pipeCard(`This Week (W${cw})`, 'tw') +
-    pipeCard('Q3', 'q3');
+    pipeCard(`Prior Week (W${pw})`, 'pw', true) +
+    pipeCard(`This Week (W${cw})`, 'tw', false) +
+    pipeCard('Q3', 'q3', true);
 }
 
 // =========================================================================
@@ -689,7 +730,60 @@ function renderBigDeals() {
   </tr></thead><tbody>${rows}</tbody></table>`;
 }
 
+function renderAgenda() {
+  const el = document.getElementById('agendaDetails');
+  const sections = [
+    { time: '0:00 – 0:05', title: 'Performance Review & Forecast Summary', owner: 'Sales Ops / Sales Leader', div: null,
+      bullets: ['Last week actuals: closed/won revenue vs target, deals pushed or lost','QTD attainment: pace vs quota, gap to goal, % of quarter elapsed','Week commit: total commit across all segments for the current week','Quarter call: aggregate roll-up against the quarterly number'],
+      expectation: 'Keep this section dry and data-only. No narrative, no color commentary. Ops reads the numbers, Sales Leader confirms the call.' },
+    { time: '0:05 – 0:15', title: 'BDR — Demand Gen & Pipeline Creation', owner: 'BDR Leader', div: null,
+      bullets: ['Pipeline created last week: # meetings set, SQLs generated, pipeline $ added','This week\'s targets: outbound volume, meeting goals, key segments in sequence','Campaign callouts: upcoming campaigns, events, or content drops','Coverage gaps: segments or territories with thin pipeline needing focus'],
+      expectation: 'Connect BDR activity to the segments sitting next in the agenda so sellers can align on shared expectations in real time.' },
+    { time: '0:15 – 0:25', title: 'KAM — Segment Forecast', owner: 'KAM Lead', div: 'KAM',
+      bullets: ['Week commit: named deals closing this week, any at risk','Quarter call: total commit, best case, coverage ratio','Deal-level callouts: deals needing exec support, procurement delays, champion changes','Next steps on top deals: clear owner and date for every commit-category deal'],
+      expectation: 'Review top 3–5 deals with a "what needs to be true to close" frame. Call out blockers and help needed to change trajectory this week.' },
+    { time: '0:25 – 0:35', title: 'Channel — Segment Forecast', owner: 'Channel Lead', div: 'Channel',
+      bullets: ['Week commit: partner-sourced and partner-influenced deals closing this week','Quarter call: commit, best case, pipeline vs target','Partner health callouts: engagement risks, enablement gaps, co-sell blockers','Escalations needed: deals where internal support or partner escalation is required'],
+      expectation: 'Review top 3–5 deals with a "what needs to be true to close" frame. Call out blockers and help needed to change trajectory this week.' },
+    { time: '0:35 – 0:45', title: 'East — Segment Forecast', owner: 'East Lead', div: 'East',
+      bullets: ['Week commit: named deals, amounts, and confidence','Quarter call: commit, best case, pipeline coverage','Deal-level callouts: deals at risk, stalled, or needing cross-functional help','Rep-level highlights: reps ahead of or behind pace worth noting'],
+      expectation: 'Review top 3–5 deals with a "what needs to be true to close" frame. Call out blockers and help needed to change trajectory this week.' },
+    { time: '0:45 – 0:55', title: 'West — Segment Forecast', owner: 'West Lead', div: 'West',
+      bullets: ['Week commit: named deals, amounts, and confidence','Quarter call: commit, best case, pipeline coverage','Deal-level callouts: deals at risk, stalled, or needing cross-functional help','Rep-level highlights: reps ahead of or behind pace worth noting'],
+      expectation: 'Review top 3–5 deals with a "what needs to be true to close" frame. Call out blockers and help needed to change trajectory this week.' },
+    { time: '0:55 – 1:05', title: 'Renewals — Outlook & Forecast', owner: 'Renewals Lead', div: null,
+      bullets: ['Renewals closing this week: named accounts, ARR at stake, status','Net renewal rate commit, NRR vs target','At-risk ARR callouts: accounts flagged for churn/downsell and mitigation plan','Expansion signals: upsell/cross-sell opportunities to hand off to AEs'],
+      expectation: 'Pair churn risk with a mitigation owner in the same breath to keep the call solution-oriented.' },
+    { time: '1:05 – 1:15', title: 'Risks, Disruptions & Insights', owner: 'Sales Ops', div: null,
+      bullets: ['Forecast accuracy check: compare this week\'s call to last week\'s commit; highlight slippage','External risk signals: macro conditions, competitive moves, product news','Process/tooling flags: Order Desk insights, SFDC data quality, deal routing anomalies','Ops callouts & insights: patterns and recommended follow-up actions'],
+      expectation: 'Ops owns the "what does the data actually say" lens — not advocacy for any segment\'s number.' },
+    { time: '1:15 – 1:25', title: 'Wrap-up — Action Items & Decisions', owner: 'Sales Leader / Sales Ops', div: null,
+      bullets: ['Action item review: read back every action item with owner and due date','Decisions made: calls settled on the fly named explicitly','Parking lot: topics needing a separate forum; assign owner to schedule','Hard stop: end on time; follow-ups go async or into 1:1s'],
+      expectation: 'Send a written recap by EoD with action items, decisions, and parking lot items.' }
+  ];
+
+  const filtered = (DIVISION === 'Total')
+    ? sections
+    : sections.filter(s => s.div === null || s.div === DIVISION);
+
+  el.innerHTML = filtered.map(s => `
+    <div style="margin-bottom:16px;padding:12px 16px;background:var(--surface2);border-radius:6px;border-left:3px solid var(--intuit-blue)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <strong style="font-size:13px">${s.time} — ${s.title}</strong>
+        <span style="font-size:11px;color:var(--text-secondary)">${s.owner}</span>
+      </div>
+      <ul style="margin:0 0 8px 18px;font-size:12px;color:var(--text)">
+        ${s.bullets.map(b => `<li style="margin-bottom:3px">${b}</li>`).join('')}
+      </ul>
+      <div style="font-size:11px;color:var(--text-secondary);font-style:italic;border-top:1px solid var(--border-light);padding-top:6px">
+        <strong>Expectation:</strong> ${s.expectation}
+      </div>
+    </div>
+  `).join('');
+}
+
 function renderAll() {
+  renderAgenda();
   renderBookings();
   renderAPRC();
   renderPipeline();
@@ -697,20 +791,89 @@ function renderAll() {
 }
 
 function exportWeek() {
-  const snapshot = {
-    exported_at: new Date().toISOString(),
-    week: DATA?.current_week_544,
-    division_viewed: DIVISION,
-    data: DATA,
-    edits: EDITS
-  };
-  const blob = new Blob([JSON.stringify(snapshot, null, 2)], {type: 'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `forecast_W${DATA?.current_week_544 || 'XX'}_${new Date().toISOString().slice(0,10)}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
+  if (typeof XLSX === 'undefined') {
+    alert('Excel library still loading. Please try again in a moment.');
+    return;
+  }
+  const wb = XLSX.utils.book_new();
+  const wk = DATA?.current_week_544 || 'XX';
+  const pw = DATA?.prior_week_544 || '--';
+
+  // --- Bookings & Contracts sheet ---
+  const bkRows = [
+    [`MM Sales Weekly Forecast — Week ${wk} — ${DIVISION}`, '', '', '', '', '', '', ''],
+    [`Exported: ${new Date().toLocaleString()}`],
+    [],
+    [`PRIOR WEEK (W${pw})`, 'Plan', 'Billed', 'Signed', 'Commit', 'Billed ITP', 'ITF', 'Signed ITP']
+  ];
+  ['ies','nonies'].forEach(rk => {
+    const label = rk === 'ies' ? 'IES Revenue' : 'Non-IES Revenue';
+    const plan = parseDollar(getEdit('bk',rk,'pw_plan') || getPlan('prior_week', rk+'_revenue'));
+    const billed = parseDollar(getEdit('bk',rk,'pw_billed') || getActuals('prior_week', rk+'_revenue'));
+    const signed = parseDollar(getEdit('bk',rk,'pw_signed'));
+    const commit = parseDollar(getEdit('bk',rk,'pw_commit'));
+    bkRows.push([label, plan, billed, signed, commit, plan?billed/plan:null, commit?billed/commit:null, plan?signed/plan:null]);
+  });
+  const ctPwPlan = parseNum(getEdit('ct','ies','pw_plan') || getPlan('prior_week','ies_contracts'));
+  const ctPwBilled = parseNum(getEdit('ct','ies','pw_billed') || getActuals('prior_week','ies_contracts'));
+  const ctPwSigned = parseNum(getEdit('ct','ies','pw_signed'));
+  const ctPwCommit = parseNum(getEdit('ct','ies','pw_commit'));
+  bkRows.push(['IES Contracts', ctPwPlan, ctPwBilled, ctPwSigned, ctPwCommit, ctPwPlan?ctPwBilled/ctPwPlan:null, ctPwCommit?ctPwBilled/ctPwCommit:null, ctPwPlan?ctPwSigned/ctPwPlan:null]);
+
+  bkRows.push([], [`THIS WEEK (W${wk})`, 'Plan', 'Commit', 'High', 'Low', 'Commit ITP']);
+  ['ies','nonies'].forEach(rk => {
+    const label = rk === 'ies' ? 'IES Revenue' : 'Non-IES Revenue';
+    const plan = parseDollar(getEdit('bk',rk,'tw_plan') || getPlan('this_week', rk+'_revenue'));
+    const commit = parseDollar(getEdit('bk',rk,'tw_commit'));
+    const high = parseDollar(getEdit('bk',rk,'tw_high'));
+    const low = parseDollar(getEdit('bk',rk,'tw_low'));
+    bkRows.push([label, plan, commit, high, low, plan?commit/plan:null]);
+  });
+  const ctTwPlan = parseNum(getEdit('ct','ies','tw_plan') || getPlan('this_week','ies_contracts'));
+  const ctTwCommit = parseNum(getEdit('ct','ies','tw_commit'));
+  const ctTwHigh = parseNum(getEdit('ct','ies','tw_high'));
+  const ctTwLow = parseNum(getEdit('ct','ies','tw_low'));
+  bkRows.push(['IES Contracts', ctTwPlan, ctTwCommit, ctTwHigh, ctTwLow, ctTwPlan?ctTwCommit/ctTwPlan:null]);
+
+  bkRows.push([], ['Q3', 'Plan', 'Billed', 'Signed', 'Commit', 'High', 'Low', 'Billed ITP', 'Commit ITP', 'High %', 'Low %', 'Rem vs Plan', 'Rem vs Commit']);
+  ['ies','nonies'].forEach(rk => {
+    const label = rk === 'ies' ? 'IES Revenue' : 'Non-IES Revenue';
+    const planSrc = rk === 'ies' ? getTarget('IES Revenue') : getTarget('Non-IES Revenue');
+    const actSrc = getActuals('qtd', rk+'_revenue');
+    const plan = parseDollar(getEdit('bk',rk,'q3_plan') || planSrc);
+    const act = parseDollar(getEdit('bk',rk,'q3_actuals') || actSrc);
+    const signed = parseDollar(getEdit('bk',rk,'q3_signed'));
+    const commit = parseDollar(getEdit('bk',rk,'q3_commit'));
+    const high = parseDollar(getEdit('bk',rk,'q3_high'));
+    const low = parseDollar(getEdit('bk',rk,'q3_low'));
+    bkRows.push([label, plan, act, signed, commit, high, low, plan?act/plan:null, plan?commit/plan:null, plan?high/plan:null, plan?low/plan:null, plan-act, commit-act]);
+  });
+  const ctQ3Plan = parseNum(getEdit('ct','ies','q3_plan') || getTargetRaw('IES Contracts'));
+  const ctQ3Act = parseNum(getEdit('ct','ies','q3_actuals') || getActuals('qtd','ies_contracts'));
+  const ctQ3Signed = parseNum(getEdit('ct','ies','q3_signed'));
+  const ctQ3Commit = parseNum(getEdit('ct','ies','q3_commit'));
+  const ctQ3High = parseNum(getEdit('ct','ies','q3_high'));
+  const ctQ3Low = parseNum(getEdit('ct','ies','q3_low'));
+  bkRows.push(['IES Contracts', ctQ3Plan, ctQ3Act, ctQ3Signed, ctQ3Commit, ctQ3High, ctQ3Low, ctQ3Plan?ctQ3Act/ctQ3Plan:null, ctQ3Plan?ctQ3Commit/ctQ3Plan:null, ctQ3Plan?ctQ3High/ctQ3Plan:null, ctQ3Plan?ctQ3Low/ctQ3Plan:null, ctQ3Plan-ctQ3Act, ctQ3Commit-ctQ3Act]);
+
+  const bkSheet = XLSX.utils.aoa_to_sheet(bkRows);
+  bkSheet['!cols'] = [{wch:18},{wch:14},{wch:14},{wch:14},{wch:14},{wch:14},{wch:14},{wch:14},{wch:12},{wch:10},{wch:10},{wch:14},{wch:14}];
+  XLSX.utils.book_append_sheet(wb, bkSheet, 'Bookings & Contracts');
+
+  // --- Big Deals sheet ---
+  let deals = DATA?.big_deals || [];
+  if (DIVISION !== 'Total') deals = deals.filter(d => d.division === DIVISION);
+  const bdRows = [['Account','Opportunity','Division','Manager','Owner','Close Date','Stage','Stage Reason','Amount','Incr. Revenue','Commit/Upside','Age','Next Step']];
+  deals.forEach((d, i) => {
+    const dealKey = (d.opportunity_name || '').replace(/[|'"]/g,'_').substring(0,40) + '_' + i;
+    const cv = getEdit('deals', dealKey, 'commit_upside') || d.commit_upside || '';
+    bdRows.push([d.account_name, d.opportunity_name, d.division, d.manager, d.owner, d.close_date, d.stage, d.stage_reason, d.amount, d.incremental_revenue, cv, d.age, d.next_step]);
+  });
+  const bdSheet = XLSX.utils.aoa_to_sheet(bdRows);
+  bdSheet['!cols'] = [{wch:30},{wch:35},{wch:10},{wch:22},{wch:22},{wch:12},{wch:12},{wch:14},{wch:14},{wch:14},{wch:14},{wch:6},{wch:40}];
+  XLSX.utils.book_append_sheet(wb, bdSheet, 'Big Deals');
+
+  XLSX.writeFile(wb, `MM_Forecast_W${wk}_${DIVISION}_${new Date().toISOString().slice(0,10)}.xlsx`);
 }
 
 init();
