@@ -402,6 +402,7 @@ function getEdit(section, row, col) {
   const edits = getEditsForWeek(VIEWING_WEEK);
   return edits[editKey(section, DIVISION, row, col)] ?? '';
 }
+let _renderRAF = 0;
 function setEdit(section, row, col, value) {
   if (isViewingSubmitted()) return;
   if (VIEWING_WEEK !== CURRENT_WEEK && SUBMITTED_WEEKS[VIEWING_WEEK]?.unlocked) {
@@ -411,7 +412,8 @@ function setEdit(section, row, col, value) {
     EDITS[editKey(section, DIVISION, row, col)] = value;
     saveEdits();
   }
-  renderAll();
+  cancelAnimationFrame(_renderRAF);
+  _renderRAF = requestAnimationFrame(() => renderAll());
 }
 function saveEdits() { localStorage.setItem(STORAGE_KEY, JSON.stringify(EDITS)); }
 function loadEdits() { try { EDITS = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch(e) { EDITS = {}; } }
@@ -608,10 +610,10 @@ function fmtOnBlur(el, fmt) {
   if (!raw) return;
   if (fmt === '$') {
     const n = parseDollar(raw);
-    if (n) { el.value = fmtDollar(n); el.dispatchEvent(new Event('change')); }
+    if (n) el.value = fmtDollar(n);
   } else if (fmt === '#') {
     const n = parseNum(raw);
-    if (n) { el.value = fmtNum(n); el.dispatchEvent(new Event('change')); }
+    if (n) el.value = fmtNum(n);
   }
 }
 
