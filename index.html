@@ -177,8 +177,21 @@ h1 span { color: var(--intuit-blue); }
       <button class="action-btn" onclick="exportWeek()">Export Week</button>
       <button class="action-btn" id="submitBtn" onclick="submitWeek()" style="background:var(--green);color:#fff;border-color:var(--green)">Submit Week</button>
       <span class="leader-legend"><span class="swatch"></span> Sales leader fields</span>
+      <button class="action-btn" onclick="openSettings()" title="Unlock audit log" style="padding:6px 10px;font-size:14px;line-height:1;position:relative">&#9881;<span id="unlockBadge" style="display:none;position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;font-size:9px;font-weight:800;width:16px;height:16px;border-radius:50%;align-items:center;justify-content:center"></span></button>
     </div>
   </header>
+
+  <div id="settingsModal" style="display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,0.4);align-items:center;justify-content:center">
+    <div style="background:var(--surface);border-radius:12px;padding:24px;max-width:520px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.2)">
+      <h3 style="margin-bottom:4px;font-size:16px;color:var(--text)">Unlock Audit Log</h3>
+      <p style="font-size:12px;color:var(--text-secondary);margin-bottom:12px">Every time a submitted week is unlocked, it is recorded here. These events are also reported via Slack during weekly data refreshes.</p>
+      <div id="unlockLogContent" style="max-height:300px;overflow-y:auto;border:1px solid var(--border-light);border-radius:6px;margin-bottom:16px;background:var(--surface2)"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button onclick="clearUnlockLog()" style="padding:8px 16px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--red);cursor:pointer;font-family:inherit;font-size:12px;font-weight:600">Clear Log</button>
+        <button onclick="closeSettings()" style="padding:8px 16px;border:none;border-radius:6px;background:var(--intuit-blue);color:#fff;cursor:pointer;font-family:inherit;font-size:12px;font-weight:700">Close</button>
+      </div>
+    </div>
+  </div>
 
   <div class="status-bar">
     <div>Last data refresh: <span id="refreshTime">--</span></div>
@@ -281,10 +294,27 @@ async function init() {
   }
   CURRENT_WEEK = DATA.current_week_544 || 36;
   VIEWING_WEEK = CURRENT_WEEK;
+  seedPriorWeeks();
   buildWeekSelector();
   updateHeader();
   updateReadonly();
+  updateUnlockBadge();
   renderAll();
+}
+
+function seedPriorWeeks() {
+  const prior = DATA.prior_week_544;
+  if (!prior) return;
+  const existing = SUBMITTED_WEEKS[prior];
+  if (!existing || !existing.data) {
+    SUBMITTED_WEEKS[prior] = {
+      submitted_at: existing?.submitted_at || new Date().toISOString(),
+      edits: existing?.edits || {},
+      data: JSON.parse(JSON.stringify(DATA)),
+      unlocked: false
+    };
+    saveSubmitted();
+  }
 }
 
 function buildEmptyData() {
@@ -373,8 +403,13 @@ function getEdit(section, row, col) {
 }
 function setEdit(section, row, col, value) {
   if (isViewingSubmitted()) return;
-  EDITS[editKey(section, DIVISION, row, col)] = value;
-  saveEdits();
+  if (VIEWING_WEEK !== CURRENT_WEEK && SUBMITTED_WEEKS[VIEWING_WEEK]?.unlocked) {
+    SUBMITTED_WEEKS[VIEWING_WEEK].edits[editKey(section, DIVISION, row, col)] = value;
+    saveSubmitted();
+  } else {
+    EDITS[editKey(section, DIVISION, row, col)] = value;
+    saveEdits();
+  }
   renderAll();
 }
 function saveEdits() { localStorage.setItem(STORAGE_KEY, JSON.stringify(EDITS)); }
@@ -382,7 +417,11 @@ function loadEdits() { try { EDITS = JSON.parse(localStorage.getItem(STORAGE_KEY
 function saveSubmitted() { localStorage.setItem(SUBMITTED_KEY, JSON.stringify(SUBMITTED_WEEKS)); }
 function loadSubmitted() { try { SUBMITTED_WEEKS = JSON.parse(localStorage.getItem(SUBMITTED_KEY)) || {}; } catch(e) { SUBMITTED_WEEKS = {}; } }
 
-function isViewingSubmitted() { return VIEWING_WEEK !== CURRENT_WEEK && SUBMITTED_WEEKS[VIEWING_WEEK]; }
+function isViewingSubmitted() {
+  if (VIEWING_WEEK === CURRENT_WEEK) return false;
+  const entry = SUBMITTED_WEEKS[VIEWING_WEEK];
+  return entry && !entry.unlocked;
+}
 
 function getEditsForWeek(wk) {
   if (wk === CURRENT_WEEK) return EDITS;
@@ -401,9 +440,11 @@ function buildWeekSelector() {
   const sorted = [...weeks].sort((a,b) => b - a);
   sel.innerHTML = sorted.map(w => {
     const isCurrent = w === CURRENT_WEEK;
-    const isSubmitted = !!SUBMITTED_WEEKS[w];
-    const label = `Week ${w}${isCurrent ? ' (Current)' : ''}${isSubmitted ? ' ✓' : ''}`;
-    return `<option value="${w}" ${w === VIEWING_WEEK ? 'selected' : ''}>${label}</option>`;
+    const entry = SUBMITTED_WEEKS[w];
+    const isSubmitted = entry && !entry.unlocked;
+    const isUnlocked = entry && entry.unlocked;
+    const suffix = isCurrent ? ' (Current)' : isSubmitted ? ' \u2713' : isUnlocked ? ' (Unlocked)' : '';
+    return `<option value="${w}" ${w === VIEWING_WEEK ? 'selected' : ''}>Week ${w}${suffix}</option>`;
   }).join('');
   document.getElementById('submitDisclaimer').style.display =
     (VIEWING_WEEK === CURRENT_WEEK && !SUBMITTED_WEEKS[CURRENT_WEEK]) ? '' : 'none';
@@ -417,9 +458,13 @@ function switchWeek(wk) {
   document.getElementById('submitDisclaimer').style.display =
     (VIEWING_WEEK === CURRENT_WEEK && !SUBMITTED_WEEKS[CURRENT_WEEK]) ? '' : 'none';
   const status = document.getElementById('weekStatus');
+  const entry = SUBMITTED_WEEKS[VIEWING_WEEK];
   if (isViewingSubmitted()) {
     status.innerHTML = `<span style="color:var(--green);font-weight:700">Submitted</span>
       <button onclick="unlockWeek(${VIEWING_WEEK})" style="font-size:10px;padding:2px 8px;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--text-secondary);cursor:pointer;font-family:inherit;margin-left:4px">Unlock</button>`;
+  } else if (entry && entry.unlocked && VIEWING_WEEK !== CURRENT_WEEK) {
+    status.innerHTML = `<span style="color:var(--orange);font-weight:700">Unlocked</span>
+      <button onclick="resubmitWeek(${VIEWING_WEEK})" style="font-size:10px;padding:2px 8px;border:1px solid var(--green);border-radius:4px;background:var(--surface);color:var(--green);cursor:pointer;font-family:inherit;margin-left:4px">Re-submit</button>`;
   } else {
     status.innerHTML = '';
   }
@@ -448,13 +493,84 @@ function submitWeek() {
   status.innerHTML = '<span style="color:var(--green);font-weight:700">Submitted</span>';
 }
 
-function unlockWeek(wk) {
-  if (!confirm('Unlock Week ' + wk + '? This will make it editable again and remove the submitted status.')) return;
-  delete SUBMITTED_WEEKS[wk];
+function resubmitWeek(wk) {
+  if (!confirm('Re-submit Week ' + wk + '? This will lock it again.')) return;
+  SUBMITTED_WEEKS[wk].unlocked = false;
+  delete SUBMITTED_WEEKS[wk].unlocked_at;
+  SUBMITTED_WEEKS[wk].submitted_at = new Date().toISOString();
   saveSubmitted();
   buildWeekSelector();
   updateReadonly();
   switchWeek(wk);
+}
+
+function unlockWeek(wk) {
+  if (!confirm('Unlock Week ' + wk + '? This will make it editable again.')) return;
+  notifyUnlock(wk);
+  SUBMITTED_WEEKS[wk].unlocked = true;
+  SUBMITTED_WEEKS[wk].unlocked_at = new Date().toISOString();
+  saveSubmitted();
+  buildWeekSelector();
+  updateReadonly();
+  switchWeek(wk);
+}
+
+const UNLOCK_LOG_KEY = 'mm_forecast_unlock_log';
+
+function getUnlockLog() {
+  try { return JSON.parse(localStorage.getItem(UNLOCK_LOG_KEY)) || []; }
+  catch(e) { return []; }
+}
+
+function notifyUnlock(wk) {
+  const entry = {
+    week: wk,
+    timestamp: new Date().toISOString(),
+    display_time: new Date().toLocaleString(),
+    division_viewing: DIVISION,
+    browser: navigator.userAgent
+  };
+  const log = getUnlockLog();
+  log.push(entry);
+  localStorage.setItem(UNLOCK_LOG_KEY, JSON.stringify(log));
+  updateUnlockBadge();
+}
+
+function updateUnlockBadge() {
+  const log = getUnlockLog();
+  const badge = document.getElementById('unlockBadge');
+  if (!badge) return;
+  if (log.length > 0) {
+    badge.textContent = log.length;
+    badge.style.display = 'inline-flex';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+function openSettings() {
+  const log = getUnlockLog();
+  const logEl = document.getElementById('unlockLogContent');
+  if (log.length === 0) {
+    logEl.innerHTML = '<p style="color:var(--muted);font-size:12px">No unlock events recorded.</p>';
+  } else {
+    logEl.innerHTML = log.slice().reverse().map(e =>
+      `<div style="padding:8px 12px;border-bottom:1px solid var(--border-light);font-size:12px">
+        <strong>Week ${e.week}</strong> unlocked on <strong>${e.display_time}</strong>
+        <span style="color:var(--muted);display:block;font-size:11px;margin-top:2px">Division: ${e.division_viewing} &middot; ${e.browser.split(' ').slice(-2).join(' ')}</span>
+      </div>`
+    ).join('');
+  }
+  document.getElementById('settingsModal').style.display = 'flex';
+}
+function closeSettings() {
+  document.getElementById('settingsModal').style.display = 'none';
+}
+function clearUnlockLog() {
+  if (!confirm('Clear the unlock audit log?')) return;
+  localStorage.removeItem(UNLOCK_LOG_KEY);
+  updateUnlockBadge();
+  openSettings();
 }
 
 function editInput(section, row, col, opts = {}) {
@@ -589,6 +705,25 @@ function renderBookings() {
     </tr></thead><tbody>
       ${pwBkRow('IES Revenue','ies',getPlan('prior_week','ies_revenue'),getActuals('prior_week','ies_revenue'))}
       ${pwBkRow('Non-IES Revenue','nonies',getPlan('prior_week','nonies_revenue'),getActuals('prior_week','nonies_revenue'))}
+      ${(function(){
+        const iesPlan = parseDollar(getEdit('bk','ies','pw_plan') || getPlan('prior_week','ies_revenue'));
+        const niPlan = parseDollar(getEdit('bk','nonies','pw_plan') || getPlan('prior_week','nonies_revenue'));
+        const iesBilled = parseDollar(getEdit('bk','ies','pw_billed') || getActuals('prior_week','ies_revenue'));
+        const niBilled = parseDollar(getEdit('bk','nonies','pw_billed') || getActuals('prior_week','nonies_revenue'));
+        const iesSigned = parseDollar(getEdit('bk','ies','pw_signed'));
+        const niSigned = parseDollar(getEdit('bk','nonies','pw_signed'));
+        const iesCommit = parseDollar(getEdit('bk','ies','pw_commit'));
+        const niCommit = parseDollar(getEdit('bk','nonies','pw_commit'));
+        const tPlan = iesPlan + niPlan, tBilled = iesBilled + niBilled, tSigned = iesSigned + niSigned, tCommit = iesCommit + niCommit;
+        return '<tr class="total-row"><td class="label">Total Revenue</td>' +
+          '<td class="num">'+calcDisplay(tPlan,'$')+'</td>' +
+          '<td class="num">'+calcDisplay(tBilled,'$')+'</td>' +
+          '<td class="num">'+calcDisplay(tSigned,'$')+'</td>' +
+          '<td class="num">'+calcDisplay(tCommit,'$')+'</td>' +
+          '<td class="num">'+calcDisplay(tPlan?tBilled/tPlan:null,'%')+'</td>' +
+          '<td class="num">'+calcDisplay(tCommit?tBilled/tCommit:null,'%')+'</td>' +
+          '<td class="num">'+calcDisplay(tPlan?tSigned/tPlan:null,'%')+'</td></tr>';
+      })()}
       <tr style="height:6px"><td colspan="8"></td></tr>
       <tr>
         <td class="label">IES Contracts</td>
@@ -656,6 +791,34 @@ function renderBookings() {
     </tr></thead><tbody>
       ${twBkRow('IES Revenue','ies',getPlan('this_week','ies_revenue'))}
       ${twBkRow('Non-IES Revenue','nonies',getPlan('this_week','nonies_revenue'))}
+      ${(function(){
+        const isT = DIVISION === 'Total';
+        const iesPlan = parseDollar(getEdit('bk','ies','tw_plan') || getPlan('this_week','ies_revenue'));
+        const niPlan = parseDollar(getEdit('bk','nonies','tw_plan') || getPlan('this_week','nonies_revenue'));
+        let iesCommit, niCommit, iesHigh, niHigh, iesLow, niLow;
+        if (isT) {
+          iesCommit = sumLeaderField('bk','ies','tw_commit').sum;
+          niCommit = sumLeaderField('bk','nonies','tw_commit').sum;
+          iesHigh = sumLeaderField('bk','ies','tw_high').sum;
+          niHigh = sumLeaderField('bk','nonies','tw_high').sum;
+          iesLow = sumLeaderField('bk','ies','tw_low').sum;
+          niLow = sumLeaderField('bk','nonies','tw_low').sum;
+        } else {
+          iesCommit = parseDollar(getEdit('bk','ies','tw_commit'));
+          niCommit = parseDollar(getEdit('bk','nonies','tw_commit'));
+          iesHigh = parseDollar(getEdit('bk','ies','tw_high'));
+          niHigh = parseDollar(getEdit('bk','nonies','tw_high'));
+          iesLow = parseDollar(getEdit('bk','ies','tw_low'));
+          niLow = parseDollar(getEdit('bk','nonies','tw_low'));
+        }
+        const tPlan = iesPlan + niPlan, tCommit = iesCommit + niCommit, tHigh = iesHigh + niHigh, tLow = iesLow + niLow;
+        return '<tr class="total-row"><td class="label">Total Revenue</td>' +
+          '<td class="num">'+calcDisplay(tPlan,'$')+'</td>' +
+          '<td class="num">'+calcDisplay(tCommit,'$')+'</td>' +
+          '<td class="num">'+calcDisplay(tHigh,'$')+'</td>' +
+          '<td class="num">'+calcDisplay(tLow,'$')+'</td>' +
+          '<td class="num">'+calcDisplay(tPlan?tCommit/tPlan:null,'%')+'</td></tr>';
+      })()}
       <tr style="height:6px"><td colspan="6"></td></tr>
       <tr>
         <td class="label">IES Contracts</td>
@@ -728,6 +891,46 @@ function renderBookings() {
     </tr></thead><tbody>
       ${q3BkRow('IES Revenue','ies',getTarget('IES Revenue'),getActuals('qtd','ies_revenue'),true)}
       ${q3BkRow('Non-IES Revenue','nonies',getTarget('Non-IES Revenue'),getActuals('qtd','nonies_revenue'),true)}
+      ${(function(){
+        const isT = DIVISION === 'Total';
+        const iesPlan = parseDollar(getEdit('bk','ies','q3_plan') || getTarget('IES Revenue'));
+        const niPlan = parseDollar(getEdit('bk','nonies','q3_plan') || getTarget('Non-IES Revenue'));
+        const iesAct = parseDollar(getEdit('bk','ies','q3_actuals') || getActuals('qtd','ies_revenue'));
+        const niAct = parseDollar(getEdit('bk','nonies','q3_actuals') || getActuals('qtd','nonies_revenue'));
+        const iesSigned = parseDollar(getEdit('bk','ies','q3_signed'));
+        const niSigned = parseDollar(getEdit('bk','nonies','q3_signed'));
+        let iesCommit, niCommit, iesHigh, niHigh, iesLow, niLow;
+        if (isT) {
+          iesCommit = sumLeaderField('bk','ies','q3_commit').sum;
+          niCommit = sumLeaderField('bk','nonies','q3_commit').sum;
+          iesHigh = sumLeaderField('bk','ies','q3_high').sum;
+          niHigh = sumLeaderField('bk','nonies','q3_high').sum;
+          iesLow = sumLeaderField('bk','ies','q3_low').sum;
+          niLow = sumLeaderField('bk','nonies','q3_low').sum;
+        } else {
+          iesCommit = parseDollar(getEdit('bk','ies','q3_commit'));
+          niCommit = parseDollar(getEdit('bk','nonies','q3_commit'));
+          iesHigh = parseDollar(getEdit('bk','ies','q3_high'));
+          niHigh = parseDollar(getEdit('bk','nonies','q3_high'));
+          iesLow = parseDollar(getEdit('bk','ies','q3_low'));
+          niLow = parseDollar(getEdit('bk','nonies','q3_low'));
+        }
+        const tP = iesPlan+niPlan, tA = iesAct+niAct, tS = iesSigned+niSigned;
+        const tC = iesCommit+niCommit, tH = iesHigh+niHigh, tL = iesLow+niLow;
+        return '<tr class="total-row"><td class="label">Total Revenue</td>' +
+          '<td class="num">'+calcDisplay(tP,'$')+'</td>' +
+          '<td class="num">'+calcDisplay(tA,'$')+'</td>' +
+          '<td class="num">'+calcDisplay(tS,'$')+'</td>' +
+          '<td class="num">'+calcDisplay(tC,'$')+'</td>' +
+          '<td class="num">'+calcDisplay(tH,'$')+'</td>' +
+          '<td class="num">'+calcDisplay(tL,'$')+'</td>' +
+          '<td class="num">'+calcDisplay(tP?tA/tP:null,'%')+'</td>' +
+          '<td class="num">'+calcDisplay(tP?tC/tP:null,'%')+'</td>' +
+          '<td class="num">'+calcDisplay(tP?tH/tP:null,'%')+'</td>' +
+          '<td class="num">'+calcDisplay(tP?tL/tP:null,'%')+'</td>' +
+          '<td class="num">'+calcDisplay(tP-tA,'$')+'</td>' +
+          '<td class="num">'+calcDisplay(tC-tA,'$')+'</td></tr>';
+      })()}
       <tr style="height:6px"><td colspan="13"></td></tr>
       ${(function(){
         const isTotal = DIVISION === 'Total';
