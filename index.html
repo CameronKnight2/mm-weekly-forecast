@@ -173,17 +173,18 @@ h1 span { color: var(--intuit-blue); }
     <div>Weeks remaining in Q3: <span class="week-info" id="weeksRemaining">--</span></div>
   </div>
 
-  <div class="tabs">
+  <div class="tabs" id="tabBar">
     <button class="tab active" onclick="showTab('agenda',this)">Agenda</button>
     <button class="tab" onclick="showTab('forecast',this)">Forecast</button>
     <button class="tab" onclick="showTab('bigdeals',this)">Big Deals</button>
+    <button class="tab" id="insightsTabBtn" onclick="showTab('insights',this)" style="display:none">Insights &amp; Actions</button>
   </div>
 
   <div id="agenda" class="panel active">
     <div class="card" style="margin-bottom:20px">
       <div class="card-header">This Week's Schedule</div>
       <div style="padding:16px 20px;font-size:14px;font-weight:700;color:var(--text)">
-        4/13 &mdash; Ashley 9&ndash;10
+        4/6 &mdash; Ashley 9&ndash;10
       </div>
     </div>
     <div class="card">
@@ -229,6 +230,10 @@ h1 span { color: var(--intuit-blue); }
     <div class="card">
       <div class="scroll-wrap" id="bigDealsWrap"></div>
     </div>
+  </div>
+
+  <div id="insights" class="panel">
+    <div id="insightsContent"></div>
   </div>
 </div>
 
@@ -289,6 +294,15 @@ document.getElementById('divFilter').addEventListener('click', e => {
   document.querySelectorAll('.div-btn').forEach(b => b.classList.remove('active'));
   e.target.classList.add('active');
   DIVISION = e.target.dataset.div;
+  const insBtn = document.getElementById('insightsTabBtn');
+  if (DIVISION === 'Total') {
+    insBtn.style.display = 'none';
+    if (document.getElementById('insights').classList.contains('active')) {
+      showTab('agenda', document.querySelector('.tab'));
+    }
+  } else {
+    insBtn.style.display = '';
+  }
   renderAll();
 });
 
@@ -729,11 +743,93 @@ function renderBigDeals() {
   </tr></thead><tbody>${rows}</tbody></table>`;
 }
 
+const INSIGHTS_DATA = {
+  'KAM': {
+    date: '4/6/26',
+    insights: [
+      'Momentum is building \u2014 22 IES contracts signed last week for $447K incremental, including 7 deals at $25K+ totaling $278K. Action: 28 contracts out for signature worth $557K are the immediate priority \u2014 leaders inspecting deal by deal with a clear close plan on every one.',
+      'Orum activity hit a new high \u2014 3,501 dials, 632 connects, 76 meetings booked at a 17.8% dial-to-connect rate. The outbound engine is running and converting. Action: Maintain pace and hold 150 dials per rep per week (and 3x power hours) as the standard.',
+      'Top and middle of funnel remain a continued focus to capture quarter-in-quarter opportunities. Every committed deal has a mutual action plan with clear timelines and confirmed next steps. Action: Leaders reviewing all commit-stage deals this week for MAP compliance \u2014 no ambiguity, no slippage.'
+    ],
+    help: [
+      'Exec sponsorship on big deals \u2014 the win room and deal clinics are working. We need continued presence on the deals that matter most to unblock and accelerate.',
+      'Air cover on KAM / Leader time \u2014 we need KAMs selling and leaders leading. Internal commitments pulling people out of the field at this stage of the quarter cost us deals. Your help protecting that time is critical.',
+      'Fast path on approvals \u2014 deals stall at the end when approvals slow down. We\u2019ll come to you directly and ask for your help moving an approval if / when it gets stuck.'
+    ]
+  },
+  'East': {
+    date: '4/6/26',
+    insights: [
+      'Manager Forecasting \u2014 80% commit, drive alignment between AEs Commit and MGRs Commit at the Weekly level and drive that down to Daily.',
+      'Daily Forecasting \u2014 Continue with the rigor and drive around AEs Daily Commit.',
+      'Move from Units to Revenue \u2014 as we move to all IES, we will start talking in revenue vs units. Desired outcome will be higher ASP.'
+    ],
+    help: [
+      'SMB Team \u2014 I\u2019d like to understand who we can go to for this process of non-IES opps.'
+    ]
+  },
+  'West': {
+    date: '4/6/26',
+    insights: [
+      'IES Gap Mitigation \u2014 Weekly Deal Clinics targeting stage erosion; increasing Solution-to-Proposal conversion from 53% to 60% to yield 53 incremental IES wins.',
+      '"WAE to Dominate" Sales Motion \u2014 Launched weekly blitzes to drive 50% SQO lift; targeting 25 immediate IES wins ($280K) through strategic Desktop Account redistribution.',
+      'Ramping 11 new AEs for a fast start for Q4.'
+    ],
+    help: [
+      'AE Capacity Recovery: Automate contact enrichment to eliminate manual sourcing, allowing Account Executives to reallocate time toward high-value closing activities.',
+      'Forecast Accuracy: Accelerate the implementation of Forecast Category fields (or a tertiary Gong option) to improve pipeline visibility and reporting precision.',
+      'Automated Lifecycle Management: Streamline the "Closed-Lost" workflow for unresponsive sequences. This includes automated opportunity closure and scheduled re-engagement following a strategic cool-off period.'
+    ]
+  },
+  'Channel': {
+    date: '4/6/26',
+    insights: [
+      'Assess Blitzing \u2014 Over 500 oppty from Unmanaged in Assess. Working with ACCT team to move as many forward as possible for IQ close. Expecting movement of minimum of 25\u201350 deals.',
+      'Strategic Firm Client Outreach Campaign \u2014 Loaded 500 contacts per strategic AM supporting these firms to target in high propensity protected base. Expecting meeting take rate of 10% or 50 meetings.',
+      'Unmanaged Round Robin \u2014 Implementing UM Round Robin for speed to close if POD AM unavailable or OOO. Expecting to decrease booked to meeting time by 1\u20132 days.'
+    ],
+    help: [
+      'Real-Time Reporting \u2014 We don\u2019t have a real time source of reporting that adds up to MM so are reliant on multiple reports and then hedging for non-IES removal in some cases. Examples: Lots of assumptions are made in the process \u2014 Payroll, Add-On entities, amendments.',
+      'Privacy Scrub Analysis \u2014 We seem to be ultra conservative here and would like to analyze what we do and don\u2019t count. Example: provided 1,000 and received 275 back that we are able to call.'
+    ]
+  }
+};
+
+function renderInsights() {
+  const el = document.getElementById('insightsContent');
+  if (DIVISION === 'Total' || !INSIGHTS_DATA[DIVISION]) {
+    el.innerHTML = '';
+    return;
+  }
+  const d = INSIGHTS_DATA[DIVISION];
+  el.innerHTML = `
+    <div class="section-hdr"><div class="dot" style="background:var(--intuit-blue)"></div><h2>${DIVISION} \u2014 Insights/Actions & Help Needed (${d.date})</h2></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="card">
+        <div class="card-header">Insights &amp; Actions</div>
+        <div style="padding:16px 20px">
+          <ul style="margin:0 0 0 18px;font-size:13px;line-height:1.7;color:var(--text)">
+            ${d.insights.map(t => `<li style="margin-bottom:10px">${escHtml(t)}</li>`).join('')}
+          </ul>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header" style="background:var(--yellow);color:#fff">Help Needed</div>
+        <div style="padding:16px 20px">
+          <ul style="margin:0 0 0 18px;font-size:13px;line-height:1.7;color:var(--text)">
+            ${d.help.map(t => `<li style="margin-bottom:10px">${escHtml(t)}</li>`).join('')}
+          </ul>
+        </div>
+      </div>
+    </div>`;
+}
+
 function renderAll() {
   renderBookings();
   renderAPRC();
   renderPipeline();
   renderBigDeals();
+  renderInsights();
 }
 
 function exportWeek() {
