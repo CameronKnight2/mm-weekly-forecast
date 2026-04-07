@@ -177,20 +177,18 @@ h1 span { color: var(--intuit-blue); }
       <button class="action-btn" onclick="exportWeek()">Export Week</button>
       <button class="action-btn" id="submitBtn" onclick="submitWeek()" style="background:var(--green);color:#fff;border-color:var(--green)">Submit Week</button>
       <span class="leader-legend"><span class="swatch"></span> Sales leader fields</span>
-      <button class="action-btn" onclick="openSettings()" title="Notification settings" style="padding:6px 10px;font-size:14px;line-height:1">&#9881;</button>
+      <button class="action-btn" onclick="openSettings()" title="Unlock audit log" style="padding:6px 10px;font-size:14px;line-height:1;position:relative">&#9881;<span id="unlockBadge" style="display:none;position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;font-size:9px;font-weight:800;width:16px;height:16px;border-radius:50%;align-items:center;justify-content:center"></span></button>
     </div>
   </header>
 
   <div id="settingsModal" style="display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,0.4);align-items:center;justify-content:center">
     <div style="background:var(--surface);border-radius:12px;padding:24px;max-width:520px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.2)">
-      <h3 style="margin-bottom:12px;font-size:16px;color:var(--text)">Notification Settings</h3>
-      <p style="font-size:12px;color:var(--text-secondary);margin-bottom:12px">Paste a Slack Incoming Webhook URL below to receive a DM whenever a submitted week is unlocked.</p>
-      <input id="webhookInput" type="text" placeholder="https://hooks.slack.com/services/T.../B.../..."
-        style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:13px;margin-bottom:8px">
-      <p style="font-size:11px;color:var(--muted);margin-bottom:16px">Create one at <a href="https://api.slack.com/apps" target="_blank" style="color:var(--intuit-blue)">api.slack.com/apps</a> &rarr; Incoming Webhooks &rarr; Add New Webhook to Workspace. Choose your own DM channel.</p>
+      <h3 style="margin-bottom:4px;font-size:16px;color:var(--text)">Unlock Audit Log</h3>
+      <p style="font-size:12px;color:var(--text-secondary);margin-bottom:12px">Every time a submitted week is unlocked, it is recorded here. These events are also reported via Slack during weekly data refreshes.</p>
+      <div id="unlockLogContent" style="max-height:300px;overflow-y:auto;border:1px solid var(--border-light);border-radius:6px;margin-bottom:16px;background:var(--surface2)"></div>
       <div style="display:flex;gap:8px;justify-content:flex-end">
-        <button onclick="closeSettings()" style="padding:8px 16px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);cursor:pointer;font-family:inherit;font-size:12px;font-weight:600">Cancel</button>
-        <button onclick="saveWebhook()" style="padding:8px 16px;border:none;border-radius:6px;background:var(--intuit-blue);color:#fff;cursor:pointer;font-family:inherit;font-size:12px;font-weight:700">Save</button>
+        <button onclick="clearUnlockLog()" style="padding:8px 16px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--red);cursor:pointer;font-family:inherit;font-size:12px;font-weight:600">Clear Log</button>
+        <button onclick="closeSettings()" style="padding:8px 16px;border:none;border-radius:6px;background:var(--intuit-blue);color:#fff;cursor:pointer;font-family:inherit;font-size:12px;font-weight:700">Close</button>
       </div>
     </div>
   </div>
@@ -299,6 +297,7 @@ async function init() {
   buildWeekSelector();
   updateHeader();
   updateReadonly();
+  updateUnlockBadge();
   renderAll();
 }
 
@@ -473,39 +472,62 @@ function unlockWeek(wk) {
   switchWeek(wk);
 }
 
-function getSlackWebhook() {
-  return localStorage.getItem('mm_forecast_slack_webhook') || '';
+const UNLOCK_LOG_KEY = 'mm_forecast_unlock_log';
+
+function getUnlockLog() {
+  try { return JSON.parse(localStorage.getItem(UNLOCK_LOG_KEY)) || []; }
+  catch(e) { return []; }
 }
 
 function notifyUnlock(wk) {
-  const url = getSlackWebhook();
-  if (!url) return;
-  const ts = new Date().toLocaleString();
-  const msg = `\u26a0\ufe0f *MM Forecast \u2014 Week ${wk} Unlocked*\n` +
-    `> *When:* ${ts}\n` +
-    `> *Division viewing:* ${DIVISION}\n` +
-    `> *Browser:* ${navigator.userAgent.split(' ').slice(-2).join(' ')}`;
-  fetch(url, {
-    method: 'POST',
-    mode: 'no-cors',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text: msg })
-  }).catch(() => {});
+  const entry = {
+    week: wk,
+    timestamp: new Date().toISOString(),
+    display_time: new Date().toLocaleString(),
+    division_viewing: DIVISION,
+    browser: navigator.userAgent
+  };
+  const log = getUnlockLog();
+  log.push(entry);
+  localStorage.setItem(UNLOCK_LOG_KEY, JSON.stringify(log));
+  updateUnlockBadge();
+}
+
+function updateUnlockBadge() {
+  const log = getUnlockLog();
+  const badge = document.getElementById('unlockBadge');
+  if (!badge) return;
+  if (log.length > 0) {
+    badge.textContent = log.length;
+    badge.style.display = 'inline-flex';
+  } else {
+    badge.style.display = 'none';
+  }
 }
 
 function openSettings() {
-  document.getElementById('webhookInput').value = getSlackWebhook();
+  const log = getUnlockLog();
+  const logEl = document.getElementById('unlockLogContent');
+  if (log.length === 0) {
+    logEl.innerHTML = '<p style="color:var(--muted);font-size:12px">No unlock events recorded.</p>';
+  } else {
+    logEl.innerHTML = log.slice().reverse().map(e =>
+      `<div style="padding:8px 12px;border-bottom:1px solid var(--border-light);font-size:12px">
+        <strong>Week ${e.week}</strong> unlocked on <strong>${e.display_time}</strong>
+        <span style="color:var(--muted);display:block;font-size:11px;margin-top:2px">Division: ${e.division_viewing} &middot; ${e.browser.split(' ').slice(-2).join(' ')}</span>
+      </div>`
+    ).join('');
+  }
   document.getElementById('settingsModal').style.display = 'flex';
 }
 function closeSettings() {
   document.getElementById('settingsModal').style.display = 'none';
 }
-function saveWebhook() {
-  const val = document.getElementById('webhookInput').value.trim();
-  localStorage.setItem('mm_forecast_slack_webhook', val);
-  closeSettings();
-  if (val) alert('Slack webhook saved. You will be notified when a week is unlocked.');
-  else alert('Slack webhook cleared. Unlock notifications are disabled.');
+function clearUnlockLog() {
+  if (!confirm('Clear the unlock audit log?')) return;
+  localStorage.removeItem(UNLOCK_LOG_KEY);
+  updateUnlockBadge();
+  openSettings();
 }
 
 function editInput(section, row, col, opts = {}) {
