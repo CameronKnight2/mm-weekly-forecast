@@ -304,10 +304,12 @@ async function init() {
 
 function seedPriorWeeks() {
   const prior = DATA.prior_week_544;
-  if (prior && !SUBMITTED_WEEKS[prior]) {
+  if (!prior) return;
+  const existing = SUBMITTED_WEEKS[prior];
+  if (!existing || !existing.data) {
     SUBMITTED_WEEKS[prior] = {
-      submitted_at: new Date().toISOString(),
-      edits: {},
+      submitted_at: existing?.submitted_at || new Date().toISOString(),
+      edits: existing?.edits || {},
       data: JSON.parse(JSON.stringify(DATA)),
       unlocked: false
     };
