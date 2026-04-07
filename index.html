@@ -64,7 +64,7 @@ h1 span { color: var(--intuit-blue); }
 .section-hdr .dot { width: 8px; height: 8px; border-radius: 50%; }
 .section-hdr h2 { font-size: 15px; font-weight: 800; color: var(--text); }
 
-.forecast-grid { display: grid; gap: 16px; margin-bottom: 20px; }
+.forecast-grid { display: grid; gap: 16px; margin-bottom: 20px; align-items: start; }
 .forecast-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
 .forecast-grid.cols-2 { grid-template-columns: 1fr 1fr; }
 .forecast-grid.cols-1 { grid-template-columns: 1fr; }
@@ -509,6 +509,38 @@ function sumDisplay(section, row, col, fmt, parseFn) {
   return `<span class="sum-cell" title="${title}"><span class="sum-dot ${dotCls}"></span>${fmtVal}</span>`;
 }
 
+function avgLeaderField(section, row, col) {
+  let sum = 0, filled = 0;
+  DIV_ONLY.forEach(div => {
+    const v = getEditForDiv(section, div, row, col);
+    if (v !== '' && v != null) {
+      const n = parseFloat(String(v).replace(/[%,]/g, ''));
+      if (!isNaN(n)) { filled++; sum += n; }
+    }
+  });
+  const allFilled = filled === DIV_ONLY.length;
+  const avg = filled > 0 ? (sum / filled) : null;
+  const dotCls = allFilled ? 'complete' : 'incomplete';
+  const title = allFilled ? 'All divisions submitted' : `${filled}/${DIV_ONLY.length} divisions filled`;
+  return { avg, filled, allFilled, dotCls, title };
+}
+
+function avgDisplay(section, row, col) {
+  const { avg, dotCls, title } = avgLeaderField(section, row, col);
+  const fmtVal = avg != null ? avg.toFixed(1) + '%' : '';
+  return `<span class="sum-cell" title="${title}"><span class="sum-dot ${dotCls}"></span>${fmtVal}</span>`;
+}
+
+function sumPipeField(section, row, col, parseFn) {
+  const parse = parseFn || parseDollar;
+  let sum = 0;
+  DIV_ONLY.forEach(div => {
+    const v = getEditForDiv(section, div, row, col);
+    if (v !== '' && v != null) sum += parse(v);
+  });
+  return sum;
+}
+
 // =========================================================================
 // BOOKINGS & CONTRACTS (merged)
 // =========================================================================
@@ -787,9 +819,32 @@ function renderPipeline() {
   const stages = ['Solution','Propose','Commit','Total'];
   const sizes = ['$1-10k','$10-25k','$25k-$50k','$50k+','Total'];
 
-  function pipeRow(label, key, section, isTotal) {
+  function pipeRow(label, key, section, isTotalRow) {
     const isLeader = (section === 'tw' || section === 'q3');
-    if (isTotal) {
+    const isDivTotal = DIVISION === 'Total';
+
+    if (isDivTotal) {
+      let pipeVal, oppsVal, commitCell, upsideCell;
+      if (isTotalRow) {
+        pipeVal = stages.slice(0,-1).reduce((s,st) => s + sumPipeField('pipe',st.toLowerCase(),section+'_pipe'), 0);
+        oppsVal = stages.slice(0,-1).reduce((s,st) => s + sumPipeField('pipe',st.toLowerCase(),section+'_opps',parseNum), 0);
+      } else {
+        pipeVal = sumPipeField('pipe',key,section+'_pipe');
+        oppsVal = sumPipeField('pipe',key,section+'_opps',parseNum);
+      }
+      commitCell = avgDisplay('pipe',key,section+'_commit');
+      upsideCell = avgDisplay('pipe',key,section+'_upside');
+      const cls = isTotalRow ? ' class="total-row"' : '';
+      return `<tr${cls}>
+        <td class="label">${label}</td>
+        <td class="num">${calcDisplay(pipeVal,'$')}</td>
+        <td class="num">${calcDisplay(oppsVal,'#')}</td>
+        <td class="num">${commitCell}</td>
+        <td class="num">${upsideCell}</td>
+      </tr>`;
+    }
+
+    if (isTotalRow) {
       const pipe = stages.slice(0,-1).reduce((s,st) => s + parseDollar(getEdit('pipe',st.toLowerCase(),section+'_pipe')), 0);
       const opps = stages.slice(0,-1).reduce((s,st) => s + parseNum(getEdit('pipe',st.toLowerCase(),section+'_opps')), 0);
       return `<tr class="total-row">
@@ -809,9 +864,32 @@ function renderPipeline() {
     </tr>`;
   }
 
-  function sizeRow(label, key, section, isTotal) {
+  function sizeRow(label, key, section, isTotalRow) {
     const isLeader = (section === 'tw' || section === 'q3');
-    if (isTotal) {
+    const isDivTotal = DIVISION === 'Total';
+
+    if (isDivTotal) {
+      let pipeVal, oppsVal, commitCell, upsideCell;
+      if (isTotalRow) {
+        pipeVal = sizes.slice(0,-1).reduce((s,sz) => s + sumPipeField('pipesize',sz.replace(/[$, +k]/g,'').toLowerCase(),section+'_pipe'), 0);
+        oppsVal = sizes.slice(0,-1).reduce((s,sz) => s + sumPipeField('pipesize',sz.replace(/[$, +k]/g,'').toLowerCase(),section+'_opps',parseNum), 0);
+      } else {
+        pipeVal = sumPipeField('pipesize',key,section+'_pipe');
+        oppsVal = sumPipeField('pipesize',key,section+'_opps',parseNum);
+      }
+      commitCell = avgDisplay('pipesize',key,section+'_commit');
+      upsideCell = avgDisplay('pipesize',key,section+'_upside');
+      const cls = isTotalRow ? ' class="total-row"' : '';
+      return `<tr${cls}>
+        <td class="label">${label}</td>
+        <td class="num">${calcDisplay(pipeVal,'$')}</td>
+        <td class="num">${calcDisplay(oppsVal,'#')}</td>
+        <td class="num">${commitCell}</td>
+        <td class="num">${upsideCell}</td>
+      </tr>`;
+    }
+
+    if (isTotalRow) {
       const pipe = sizes.slice(0,-1).reduce((s,sz) => s + parseDollar(getEdit('pipesize',sz.replace(/[$ +k]/g,'').toLowerCase(),section+'_pipe')), 0);
       const opps = sizes.slice(0,-1).reduce((s,sz) => s + parseNum(getEdit('pipesize',sz.replace(/[$ +k]/g,'').toLowerCase(),section+'_opps')), 0);
       return `<tr class="total-row">
