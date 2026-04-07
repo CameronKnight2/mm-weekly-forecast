@@ -125,6 +125,18 @@ h1 span { color: var(--intuit-blue); }
 .leader-legend { display: inline-flex; align-items: center; gap: 6px; margin-left: 16px; font-size: 11px; color: var(--text-secondary); }
 .leader-legend .swatch { width: 14px; height: 10px; border-radius: 3px; background: var(--leader-bg); border: 1px solid var(--leader-border); }
 
+.sum-cell { display:inline-flex; align-items:center; gap:4px; font-variant-numeric:tabular-nums; font-size:12px; font-weight:600; white-space:nowrap; }
+.sum-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.sum-dot.complete { background:var(--green); }
+.sum-dot.incomplete { background:var(--red); }
+
+.insight-textarea { width:100%; min-height:120px; font-family:inherit; font-size:13px; line-height:1.6; color:var(--text); background:var(--surface); border:1px solid var(--border-light); border-radius:4px; padding:12px; resize:vertical; transition:border-color .15s, box-shadow .15s; }
+.insight-textarea:focus { border-color:var(--intuit-blue); outline:none; box-shadow:0 0 0 2px rgba(0,119,197,0.15); }
+.insight-textarea::placeholder { color:var(--muted); }
+
+.readonly-overlay { pointer-events:none; opacity:0.7; }
+.readonly-overlay .edit-cell, .readonly-overlay .insight-textarea { pointer-events:none; background:var(--surface2); }
+
 @media print {
   body { background: #fff; color: #393A3D; font-size: 10px; }
   .container { max-width: 100%; padding: 10px; }
@@ -163,14 +175,18 @@ h1 span { color: var(--intuit-blue); }
         <button class="div-btn" data-div="Channel">Channel</button>
       </div>
       <button class="action-btn" onclick="exportWeek()">Export Week</button>
+      <button class="action-btn" id="submitBtn" onclick="submitWeek()" style="background:var(--green);color:#fff;border-color:var(--green)">Submit Week</button>
       <span class="leader-legend"><span class="swatch"></span> Sales leader fields</span>
     </div>
   </header>
 
   <div class="status-bar">
     <div>Last data refresh: <span id="refreshTime">--</span></div>
-    <div>Viewing: <span class="week-info" id="weekInfo">--</span></div>
+    <div style="display:flex;align-items:center;gap:8px">Viewing: <select id="weekSelect" style="font-family:inherit;font-size:12px;font-weight:700;color:var(--intuit-blue);border:1px solid var(--border);border-radius:4px;padding:4px 8px;background:var(--surface);cursor:pointer" onchange="switchWeek(this.value)"></select><span id="weekStatus" style="font-size:11px"></span></div>
     <div>Weeks remaining in Q3: <span class="week-info" id="weeksRemaining">--</span></div>
+  </div>
+  <div id="submitDisclaimer" style="display:none;background:var(--yellow-bg);border:1px solid var(--leader-border);border-radius:6px;padding:8px 16px;margin-bottom:12px;font-size:11px;color:var(--yellow)">
+    <strong>Ops only:</strong> "Submit Week" archives the current week's data so it cannot be accidentally edited. Sales leaders — do not use this button. It does not submit your individual inputs.
   </div>
 
   <div class="tabs" id="tabBar">
@@ -241,11 +257,17 @@ h1 span { color: var(--intuit-blue); }
 let DATA = null;
 let DIVISION = 'Total';
 let EDITS = {};
+let SUBMITTED_WEEKS = {};
+let CURRENT_WEEK = null;
+let VIEWING_WEEK = null;
 const STORAGE_KEY = 'mm_forecast_edits';
+const SUBMITTED_KEY = 'mm_forecast_submitted';
 const DIVISIONS = ['Total','KAM','East','West','Channel'];
+const DIV_ONLY = ['KAM','East','West','Channel'];
 
 async function init() {
   loadEdits();
+  loadSubmitted();
   DATA = window.__FORECAST_DATA || null;
   if (!DATA) {
     try {
@@ -257,7 +279,11 @@ async function init() {
     DATA = buildEmptyData();
     console.info('No forecast_data.json loaded. Serve via: python3 -m http.server 8000');
   }
+  CURRENT_WEEK = DATA.current_week_544 || 36;
+  VIEWING_WEEK = CURRENT_WEEK;
+  buildWeekSelector();
   updateHeader();
+  updateReadonly();
   renderAll();
 }
 
@@ -284,8 +310,6 @@ function updateHeader() {
     `FY26 Q3 \u00b7 Mid-Market Sales Division \u00b7 Week ${d.current_week_544 || '--'}`;
   document.getElementById('refreshTime').textContent =
     d.generated_at ? new Date(d.generated_at).toLocaleString() : '--';
-  document.getElementById('weekInfo').textContent =
-    `Week ${d.current_week_544 || '--'} (Prior: W${d.prior_week_544 || '--'})`;
   document.getElementById('weeksRemaining').textContent = d.weeks_remaining_q3 || '--';
 }
 
@@ -344,15 +368,94 @@ function editKey(section, division, row, col) {
   return `${section}|${division}|${row}|${col}`;
 }
 function getEdit(section, row, col) {
-  return EDITS[editKey(section, DIVISION, row, col)] ?? '';
+  const edits = getEditsForWeek(VIEWING_WEEK);
+  return edits[editKey(section, DIVISION, row, col)] ?? '';
 }
 function setEdit(section, row, col, value) {
+  if (isViewingSubmitted()) return;
   EDITS[editKey(section, DIVISION, row, col)] = value;
   saveEdits();
   renderAll();
 }
 function saveEdits() { localStorage.setItem(STORAGE_KEY, JSON.stringify(EDITS)); }
 function loadEdits() { try { EDITS = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch(e) { EDITS = {}; } }
+function saveSubmitted() { localStorage.setItem(SUBMITTED_KEY, JSON.stringify(SUBMITTED_WEEKS)); }
+function loadSubmitted() { try { SUBMITTED_WEEKS = JSON.parse(localStorage.getItem(SUBMITTED_KEY)) || {}; } catch(e) { SUBMITTED_WEEKS = {}; } }
+
+function isViewingSubmitted() { return VIEWING_WEEK !== CURRENT_WEEK && SUBMITTED_WEEKS[VIEWING_WEEK]; }
+
+function getEditsForWeek(wk) {
+  if (wk === CURRENT_WEEK) return EDITS;
+  return SUBMITTED_WEEKS[wk]?.edits || {};
+}
+
+function getEditForDiv(section, div, row, col) {
+  const edits = getEditsForWeek(VIEWING_WEEK);
+  return edits[editKey(section, div, row, col)] ?? '';
+}
+
+function buildWeekSelector() {
+  const sel = document.getElementById('weekSelect');
+  const weeks = new Set([CURRENT_WEEK]);
+  Object.keys(SUBMITTED_WEEKS).forEach(w => weeks.add(Number(w)));
+  const sorted = [...weeks].sort((a,b) => b - a);
+  sel.innerHTML = sorted.map(w => {
+    const isCurrent = w === CURRENT_WEEK;
+    const isSubmitted = !!SUBMITTED_WEEKS[w];
+    const label = `Week ${w}${isCurrent ? ' (Current)' : ''}${isSubmitted ? ' ✓' : ''}`;
+    return `<option value="${w}" ${w === VIEWING_WEEK ? 'selected' : ''}>${label}</option>`;
+  }).join('');
+  document.getElementById('submitDisclaimer').style.display =
+    (VIEWING_WEEK === CURRENT_WEEK && !SUBMITTED_WEEKS[CURRENT_WEEK]) ? '' : 'none';
+}
+
+function switchWeek(wk) {
+  VIEWING_WEEK = Number(wk);
+  updateReadonly();
+  updateHeader();
+  renderAll();
+  document.getElementById('submitDisclaimer').style.display =
+    (VIEWING_WEEK === CURRENT_WEEK && !SUBMITTED_WEEKS[CURRENT_WEEK]) ? '' : 'none';
+  const status = document.getElementById('weekStatus');
+  if (isViewingSubmitted()) {
+    status.innerHTML = `<span style="color:var(--green);font-weight:700">Submitted</span>
+      <button onclick="unlockWeek(${VIEWING_WEEK})" style="font-size:10px;padding:2px 8px;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--text-secondary);cursor:pointer;font-family:inherit;margin-left:4px">Unlock</button>`;
+  } else {
+    status.innerHTML = '';
+  }
+}
+
+function updateReadonly() {
+  const ro = isViewingSubmitted();
+  document.getElementById('forecast').classList.toggle('readonly-overlay', ro);
+  document.getElementById('bigdeals').classList.toggle('readonly-overlay', ro);
+  document.getElementById('insights').classList.toggle('readonly-overlay', ro);
+  document.getElementById('submitBtn').style.display =
+    (VIEWING_WEEK === CURRENT_WEEK && !SUBMITTED_WEEKS[CURRENT_WEEK]) ? '' : 'none';
+}
+
+function submitWeek() {
+  if (!confirm('Submit Week ' + CURRENT_WEEK + '? This will archive the current data. You can unlock it later if needed.')) return;
+  SUBMITTED_WEEKS[CURRENT_WEEK] = {
+    submitted_at: new Date().toISOString(),
+    edits: JSON.parse(JSON.stringify(EDITS)),
+    data: JSON.parse(JSON.stringify(DATA))
+  };
+  saveSubmitted();
+  buildWeekSelector();
+  updateReadonly();
+  const status = document.getElementById('weekStatus');
+  status.innerHTML = '<span style="color:var(--green);font-weight:700">Submitted</span>';
+}
+
+function unlockWeek(wk) {
+  if (!confirm('Unlock Week ' + wk + '? This will make it editable again and remove the submitted status.')) return;
+  delete SUBMITTED_WEEKS[wk];
+  saveSubmitted();
+  buildWeekSelector();
+  updateReadonly();
+  switchWeek(wk);
+}
 
 function editInput(section, row, col, opts = {}) {
   const val = getEdit(section, row, col);
@@ -385,6 +488,26 @@ function getActuals(period, metric) { return DATA?.actuals?.[DIVISION]?.[period]
 function getPlan(period, metric) { return DATA?.plan_weekly?.[DIVISION]?.[period]?.[metric] || 0; }
 function getTarget(metric) { return parseDollar(DATA?.targets?.[DIVISION]?.[metric]); }
 function getTargetRaw(metric) { return DATA?.targets?.[DIVISION]?.[metric] || ''; }
+
+function sumLeaderField(section, row, col, parseFn) {
+  const parse = parseFn || parseDollar;
+  let sum = 0;
+  let filled = 0;
+  DIV_ONLY.forEach(div => {
+    const v = getEditForDiv(section, div, row, col);
+    if (v !== '' && v != null) { filled++; sum += parse(v); }
+  });
+  const allFilled = filled === DIV_ONLY.length;
+  const dotCls = allFilled ? 'complete' : 'incomplete';
+  const title = allFilled ? 'All divisions submitted' : `${filled}/${DIV_ONLY.length} divisions filled`;
+  return { sum, filled, allFilled, dotCls, title };
+}
+
+function sumDisplay(section, row, col, fmt, parseFn) {
+  const { sum, dotCls, title } = sumLeaderField(section, row, col, parseFn);
+  const fmtVal = fmt === '$' ? fmtDollar(sum) : fmt === '#' ? fmtNum(sum) : sum;
+  return `<span class="sum-cell" title="${title}"><span class="sum-dot ${dotCls}"></span>${fmtVal}</span>`;
+}
 
 // =========================================================================
 // BOOKINGS & CONTRACTS (merged)
@@ -449,27 +572,50 @@ function renderBookings() {
 
   // --- This Week ---
   function twBkRow(label, rk, planVal) {
+    const isTotal = DIVISION === 'Total';
     const plan = parseDollar(getEdit('bk',rk,'tw_plan') || planVal);
-    const commit = parseDollar(getEdit('bk',rk,'tw_commit'));
-    const high = parseDollar(getEdit('bk',rk,'tw_high'));
-    const low = parseDollar(getEdit('bk',rk,'tw_low'));
-    const itp = plan ? commit / plan : null;
+    let commitCell, highCell, lowCell, commitVal;
+    if (isTotal) {
+      const c = sumLeaderField('bk',rk,'tw_commit');
+      const h = sumLeaderField('bk',rk,'tw_high');
+      const l = sumLeaderField('bk',rk,'tw_low');
+      commitVal = c.sum;
+      commitCell = sumDisplay('bk',rk,'tw_commit','$');
+      highCell = sumDisplay('bk',rk,'tw_high','$');
+      lowCell = sumDisplay('bk',rk,'tw_low','$');
+    } else {
+      commitVal = parseDollar(getEdit('bk',rk,'tw_commit'));
+      commitCell = editInput('bk',rk,'tw_commit',{placeholder:'$0',leader:true});
+      highCell = editInput('bk',rk,'tw_high',{placeholder:'$0',leader:true});
+      lowCell = editInput('bk',rk,'tw_low',{placeholder:'$0',leader:true});
+    }
+    const itp = plan ? commitVal / plan : null;
     return `<tr>
       <td class="label">${label}</td>
       <td class="num">${editInput('bk',rk,'tw_plan',{placeholder:'$0',prefill:fmtDollar(planVal)})}</td>
-      <td class="num">${editInput('bk',rk,'tw_commit',{placeholder:'$0',leader:true})}</td>
-      <td class="num">${editInput('bk',rk,'tw_high',{placeholder:'$0',leader:true})}</td>
-      <td class="num">${editInput('bk',rk,'tw_low',{placeholder:'$0',leader:true})}</td>
+      <td class="num">${commitCell}</td>
+      <td class="num">${highCell}</td>
+      <td class="num">${lowCell}</td>
       <td class="num">${calcDisplay(itp,'%')}</td>
     </tr>`;
   }
 
   const ctTwPlanVal = getPlan('this_week','ies_contracts');
   const ctTwPlan = parseNum(getEdit('ct','ies','tw_plan') || ctTwPlanVal);
-  const ctTwCommit = parseNum(getEdit('ct','ies','tw_commit'));
-  const ctTwHigh = parseNum(getEdit('ct','ies','tw_high'));
-  const ctTwLow = parseNum(getEdit('ct','ies','tw_low'));
-  const ctTwItp = ctTwPlan ? ctTwCommit / ctTwPlan : null;
+  let ctTwCommitCell, ctTwHighCell, ctTwLowCell, ctTwCommitVal;
+  if (DIVISION === 'Total') {
+    const c = sumLeaderField('ct','ies','tw_commit',parseNum);
+    ctTwCommitVal = c.sum;
+    ctTwCommitCell = sumDisplay('ct','ies','tw_commit','#',parseNum);
+    ctTwHighCell = sumDisplay('ct','ies','tw_high','#',parseNum);
+    ctTwLowCell = sumDisplay('ct','ies','tw_low','#',parseNum);
+  } else {
+    ctTwCommitVal = parseNum(getEdit('ct','ies','tw_commit'));
+    ctTwCommitCell = editInput('ct','ies','tw_commit',{placeholder:'0',leader:true});
+    ctTwHighCell = editInput('ct','ies','tw_high',{placeholder:'0',leader:true});
+    ctTwLowCell = editInput('ct','ies','tw_low',{placeholder:'0',leader:true});
+  }
+  const ctTwItp = ctTwPlan ? ctTwCommitVal / ctTwPlan : null;
 
   const thisCard = `<div class="card"><div class="card-header">This Week (W${cw})</div>
     <table class="ftable"><thead><tr>
@@ -482,9 +628,9 @@ function renderBookings() {
       <tr>
         <td class="label">IES Contracts</td>
         <td class="num">${editInput('ct','ies','tw_plan',{placeholder:'0',prefill:fmtNum(ctTwPlanVal)})}</td>
-        <td class="num">${editInput('ct','ies','tw_commit',{placeholder:'0',leader:true})}</td>
-        <td class="num">${editInput('ct','ies','tw_high',{placeholder:'0',leader:true})}</td>
-        <td class="num">${editInput('ct','ies','tw_low',{placeholder:'0',leader:true})}</td>
+        <td class="num">${ctTwCommitCell}</td>
+        <td class="num">${ctTwHighCell}</td>
+        <td class="num">${ctTwLowCell}</td>
         <td class="num">${calcDisplay(ctTwItp,'%')}</td>
       </tr>
     </tbody></table></div>`;
@@ -494,32 +640,47 @@ function renderBookings() {
     const fmt = isDollar !== false;
     const parse = fmt ? parseDollar : parseNum;
     const fmtFn = fmt ? fmtDollar : fmtNum;
+    const fmtCode = fmt ? '$' : '#';
+    const isTotal = DIVISION === 'Total';
     const plan = parse(getEdit('bk',rk,'q3_plan') || planVal);
     const actuals = parse(getEdit('bk',rk,'q3_actuals') || actualsVal);
-    const signed = parse(getEdit('bk',rk,'q3_signed'));
-    const commit = parse(getEdit('bk',rk,'q3_commit'));
-    const high = parse(getEdit('bk',rk,'q3_high'));
-    const low = parse(getEdit('bk',rk,'q3_low'));
+    let commitCell, highCell, lowCell, commitVal, highVal, lowVal;
+    if (isTotal) {
+      const c = sumLeaderField('bk',rk,'q3_commit',parse);
+      const h = sumLeaderField('bk',rk,'q3_high',parse);
+      const l = sumLeaderField('bk',rk,'q3_low',parse);
+      commitVal = c.sum; highVal = h.sum; lowVal = l.sum;
+      commitCell = sumDisplay('bk',rk,'q3_commit',fmtCode,parse);
+      highCell = sumDisplay('bk',rk,'q3_high',fmtCode,parse);
+      lowCell = sumDisplay('bk',rk,'q3_low',fmtCode,parse);
+    } else {
+      commitVal = parse(getEdit('bk',rk,'q3_commit'));
+      highVal = parse(getEdit('bk',rk,'q3_high'));
+      lowVal = parse(getEdit('bk',rk,'q3_low'));
+      commitCell = editInput('bk',rk,'q3_commit',{placeholder: fmt?'$0':'0',leader:true});
+      highCell = editInput('bk',rk,'q3_high',{placeholder: fmt?'$0':'0',leader:true});
+      lowCell = editInput('bk',rk,'q3_low',{placeholder: fmt?'$0':'0',leader:true});
+    }
     const billedItp = plan ? actuals / plan : null;
-    const commitItp = plan ? commit / plan : null;
-    const highPct = plan ? high / plan : null;
-    const lowPct = plan ? low / plan : null;
+    const commitItp = plan ? commitVal / plan : null;
+    const highPct = plan ? highVal / plan : null;
+    const lowPct = plan ? lowVal / plan : null;
     const remPlan = plan - actuals;
-    const remCommit = commit - actuals;
+    const remCommit = commitVal - actuals;
     return `<tr>
       <td class="label">${label}</td>
       <td class="num">${editInput('bk',rk,'q3_plan',{placeholder: fmt?'$0':'0',prefill:fmtFn(planVal)})}</td>
       <td class="num">${editInput('bk',rk,'q3_actuals',{placeholder: fmt?'$0':'0',prefill:fmtFn(actualsVal)})}</td>
       <td class="num">${editInput('bk',rk,'q3_signed',{placeholder: fmt?'$0':'0'})}</td>
-      <td class="num">${editInput('bk',rk,'q3_commit',{placeholder: fmt?'$0':'0',leader:true})}</td>
-      <td class="num">${editInput('bk',rk,'q3_high',{placeholder: fmt?'$0':'0',leader:true})}</td>
-      <td class="num">${editInput('bk',rk,'q3_low',{placeholder: fmt?'$0':'0',leader:true})}</td>
+      <td class="num">${commitCell}</td>
+      <td class="num">${highCell}</td>
+      <td class="num">${lowCell}</td>
       <td class="num">${calcDisplay(billedItp,'%')}</td>
       <td class="num">${calcDisplay(commitItp,'%')}</td>
       <td class="num">${calcDisplay(highPct,'%')}</td>
       <td class="num">${calcDisplay(lowPct,'%')}</td>
-      <td class="num">${calcDisplay(remPlan, fmt?'$':'#')}</td>
-      <td class="num">${calcDisplay(remCommit, fmt?'$':'#')}</td>
+      <td class="num">${calcDisplay(remPlan, fmtCode)}</td>
+      <td class="num">${calcDisplay(remCommit, fmtCode)}</td>
     </tr>`;
   }
 
@@ -537,26 +698,36 @@ function renderBookings() {
       ${q3BkRow('Non-IES Revenue','nonies',getTarget('Non-IES Revenue'),getActuals('qtd','nonies_revenue'),true)}
       <tr style="height:6px"><td colspan="13"></td></tr>
       ${(function(){
+        const isTotal = DIVISION === 'Total';
         const plan = parseNum(getEdit('ct','ies','q3_plan') || ctQ3PlanVal);
         const actuals = parseNum(getEdit('ct','ies','q3_actuals') || ctQ3ActVal);
-        const signed = parseNum(getEdit('ct','ies','q3_signed'));
-        const commit = parseNum(getEdit('ct','ies','q3_commit'));
-        const high = parseNum(getEdit('ct','ies','q3_high'));
-        const low = parseNum(getEdit('ct','ies','q3_low'));
+        let commitCell, highCell, lowCell, commitVal;
+        if (isTotal) {
+          const c = sumLeaderField('ct','ies','q3_commit',parseNum);
+          commitVal = c.sum;
+          commitCell = sumDisplay('ct','ies','q3_commit','#',parseNum);
+          highCell = sumDisplay('ct','ies','q3_high','#',parseNum);
+          lowCell = sumDisplay('ct','ies','q3_low','#',parseNum);
+        } else {
+          commitVal = parseNum(getEdit('ct','ies','q3_commit'));
+          commitCell = editInput('ct','ies','q3_commit',{placeholder:'0',leader:true});
+          highCell = editInput('ct','ies','q3_high',{placeholder:'0',leader:true});
+          lowCell = editInput('ct','ies','q3_low',{placeholder:'0',leader:true});
+        }
         const billedItp = plan ? actuals / plan : null;
-        const commitItp = plan ? commit / plan : null;
-        const highPct = plan ? high / plan : null;
-        const lowPct = plan ? low / plan : null;
+        const commitItp = plan ? commitVal / plan : null;
+        const highPct = plan ? (isTotal ? sumLeaderField('ct','ies','q3_high',parseNum).sum : parseNum(getEdit('ct','ies','q3_high'))) / plan : null;
+        const lowPct = plan ? (isTotal ? sumLeaderField('ct','ies','q3_low',parseNum).sum : parseNum(getEdit('ct','ies','q3_low'))) / plan : null;
         const remPlan = plan - actuals;
-        const remCommit = commit - actuals;
+        const remCommit = commitVal - actuals;
         return '<tr>' +
           '<td class="label">IES Contracts</td>' +
           '<td class="num">'+editInput('ct','ies','q3_plan',{placeholder:'0',prefill:fmtNum(ctQ3PlanVal)})+'</td>' +
           '<td class="num">'+editInput('ct','ies','q3_actuals',{placeholder:'0',prefill:fmtNum(ctQ3ActVal)})+'</td>' +
           '<td class="num">'+editInput('ct','ies','q3_signed',{placeholder:'0'})+'</td>' +
-          '<td class="num">'+editInput('ct','ies','q3_commit',{placeholder:'0',leader:true})+'</td>' +
-          '<td class="num">'+editInput('ct','ies','q3_high',{placeholder:'0',leader:true})+'</td>' +
-          '<td class="num">'+editInput('ct','ies','q3_low',{placeholder:'0',leader:true})+'</td>' +
+          '<td class="num">'+commitCell+'</td>' +
+          '<td class="num">'+highCell+'</td>' +
+          '<td class="num">'+lowCell+'</td>' +
           '<td class="num">'+calcDisplay(billedItp,'%')+'</td>' +
           '<td class="num">'+calcDisplay(commitItp,'%')+'</td>' +
           '<td class="num">'+calcDisplay(highPct,'%')+'</td>' +
@@ -672,7 +843,7 @@ function renderPipeline() {
           return sizeRow(s, k, section, s==='Total');
         }).join('')}
       </tbody></table>`;
-    if (showCreated !== false) {
+    if (showCreated) {
       html += `<div class="card-header" style="margin-top:2px">Pipeline Created</div>
       <table class="ftable"><thead><tr><th></th><th class="num">Pipeline</th><th class="num">Per Week</th></tr></thead><tbody>
         <tr><td class="label">Total</td>
@@ -681,8 +852,7 @@ function renderPipeline() {
         </tr>
       </tbody></table>`;
     }
-    html += `</div>`;
-    return html;
+    return html + `</div>`;
   }
 
   const pw = DATA.prior_week_544 || 35;
@@ -797,28 +967,28 @@ const INSIGHTS_DATA = {
 
 function renderInsights() {
   const el = document.getElementById('insightsContent');
-  if (DIVISION === 'Total' || !INSIGHTS_DATA[DIVISION]) {
+  if (DIVISION === 'Total') {
     el.innerHTML = '';
     return;
   }
-  const d = INSIGHTS_DATA[DIVISION];
+  const defaults = INSIGHTS_DATA[DIVISION] || {date:'',insights:[],help:[]};
+  const insightsVal = getEdit('insights',DIVISION,'insights_text') || defaults.insights.map(t => '\u2022 ' + t).join('\n\n');
+  const helpVal = getEdit('insights',DIVISION,'help_text') || defaults.help.map(t => '\u2022 ' + t).join('\n\n');
   el.innerHTML = `
-    <div class="section-hdr"><div class="dot" style="background:var(--intuit-blue)"></div><h2>${DIVISION} \u2014 Insights/Actions & Help Needed (${d.date})</h2></div>
+    <div class="section-hdr"><div class="dot" style="background:var(--intuit-blue)"></div><h2>${DIVISION} \u2014 Insights/Actions & Help Needed</h2></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
       <div class="card">
         <div class="card-header">Insights &amp; Actions</div>
         <div style="padding:16px 20px">
-          <ul style="margin:0 0 0 18px;font-size:13px;line-height:1.7;color:var(--text)">
-            ${d.insights.map(t => `<li style="margin-bottom:10px">${escHtml(t)}</li>`).join('')}
-          </ul>
+          <textarea class="insight-textarea" placeholder="Enter insights and actions for ${DIVISION}..."
+            onchange="setEdit('insights','${DIVISION}','insights_text',this.value)">${escHtml(insightsVal)}</textarea>
         </div>
       </div>
       <div class="card">
         <div class="card-header" style="background:var(--yellow);color:#fff">Help Needed</div>
         <div style="padding:16px 20px">
-          <ul style="margin:0 0 0 18px;font-size:13px;line-height:1.7;color:var(--text)">
-            ${d.help.map(t => `<li style="margin-bottom:10px">${escHtml(t)}</li>`).join('')}
-          </ul>
+          <textarea class="insight-textarea" placeholder="Enter help needed for ${DIVISION}..."
+            onchange="setEdit('insights','${DIVISION}','help_text',this.value)">${escHtml(helpVal)}</textarea>
         </div>
       </div>
     </div>`;
