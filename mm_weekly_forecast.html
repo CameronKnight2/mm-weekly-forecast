@@ -177,8 +177,23 @@ h1 span { color: var(--intuit-blue); }
       <button class="action-btn" onclick="exportWeek()">Export Week</button>
       <button class="action-btn" id="submitBtn" onclick="submitWeek()" style="background:var(--green);color:#fff;border-color:var(--green)">Submit Week</button>
       <span class="leader-legend"><span class="swatch"></span> Sales leader fields</span>
+      <button class="action-btn" onclick="openSettings()" title="Notification settings" style="padding:6px 10px;font-size:14px;line-height:1">&#9881;</button>
     </div>
   </header>
+
+  <div id="settingsModal" style="display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,0.4);align-items:center;justify-content:center">
+    <div style="background:var(--surface);border-radius:12px;padding:24px;max-width:520px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.2)">
+      <h3 style="margin-bottom:12px;font-size:16px;color:var(--text)">Notification Settings</h3>
+      <p style="font-size:12px;color:var(--text-secondary);margin-bottom:12px">Paste a Slack Incoming Webhook URL below to receive a DM whenever a submitted week is unlocked.</p>
+      <input id="webhookInput" type="text" placeholder="https://hooks.slack.com/services/T.../B.../..."
+        style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:13px;margin-bottom:8px">
+      <p style="font-size:11px;color:var(--muted);margin-bottom:16px">Create one at <a href="https://api.slack.com/apps" target="_blank" style="color:var(--intuit-blue)">api.slack.com/apps</a> &rarr; Incoming Webhooks &rarr; Add New Webhook to Workspace. Choose your own DM channel.</p>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button onclick="closeSettings()" style="padding:8px 16px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);cursor:pointer;font-family:inherit;font-size:12px;font-weight:600">Cancel</button>
+        <button onclick="saveWebhook()" style="padding:8px 16px;border:none;border-radius:6px;background:var(--intuit-blue);color:#fff;cursor:pointer;font-family:inherit;font-size:12px;font-weight:700">Save</button>
+      </div>
+    </div>
+  </div>
 
   <div class="status-bar">
     <div>Last data refresh: <span id="refreshTime">--</span></div>
@@ -450,11 +465,47 @@ function submitWeek() {
 
 function unlockWeek(wk) {
   if (!confirm('Unlock Week ' + wk + '? This will make it editable again and remove the submitted status.')) return;
+  notifyUnlock(wk);
   delete SUBMITTED_WEEKS[wk];
   saveSubmitted();
   buildWeekSelector();
   updateReadonly();
   switchWeek(wk);
+}
+
+function getSlackWebhook() {
+  return localStorage.getItem('mm_forecast_slack_webhook') || '';
+}
+
+function notifyUnlock(wk) {
+  const url = getSlackWebhook();
+  if (!url) return;
+  const ts = new Date().toLocaleString();
+  const msg = `\u26a0\ufe0f *MM Forecast \u2014 Week ${wk} Unlocked*\n` +
+    `> *When:* ${ts}\n` +
+    `> *Division viewing:* ${DIVISION}\n` +
+    `> *Browser:* ${navigator.userAgent.split(' ').slice(-2).join(' ')}`;
+  fetch(url, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text: msg })
+  }).catch(() => {});
+}
+
+function openSettings() {
+  document.getElementById('webhookInput').value = getSlackWebhook();
+  document.getElementById('settingsModal').style.display = 'flex';
+}
+function closeSettings() {
+  document.getElementById('settingsModal').style.display = 'none';
+}
+function saveWebhook() {
+  const val = document.getElementById('webhookInput').value.trim();
+  localStorage.setItem('mm_forecast_slack_webhook', val);
+  closeSettings();
+  if (val) alert('Slack webhook saved. You will be notified when a week is unlocked.');
+  else alert('Slack webhook cleared. Unlock notifications are disabled.');
 }
 
 function editInput(section, row, col, opts = {}) {
