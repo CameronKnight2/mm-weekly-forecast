@@ -580,9 +580,38 @@ function editInput(section, row, col, opts = {}) {
   if (isLeader) cls += ' leader-field';
   const ph = opts.placeholder || '';
   const prefill = (val === '' && opts.prefill != null) ? opts.prefill : val;
-  return `<input class="${cls}" value="${escHtml(prefill)}" placeholder="${ph}"
+  const fmt = opts.fmt || '';
+  const blurFn = fmt ? ` onblur="fmtOnBlur(this,'${fmt}')"` : '';
+  const focusFn = fmt ? ` onfocus="rawOnFocus(this,'${fmt}')"` : ' onfocus="this.select()"';
+  const displayVal = fmt === '$' && prefill ? fmtDollar(parseDollar(prefill)) : (fmt === '#' && prefill ? fmtNum(parseNum(prefill)) : prefill);
+  return `<input class="${cls}" value="${escHtml(displayVal)}" placeholder="${ph}"
     onchange="setEdit('${section}','${row}','${col}',this.value)"
-    onfocus="this.select()">`;
+    ${focusFn}${blurFn}>`;
+}
+
+function rawOnFocus(el, fmt) {
+  const raw = el.value.trim();
+  if (!raw) { el.select(); return; }
+  if (fmt === '$') {
+    const n = parseDollar(raw);
+    if (n) el.value = n;
+  } else if (fmt === '#') {
+    const n = parseNum(raw);
+    if (n) el.value = n;
+  }
+  el.select();
+}
+
+function fmtOnBlur(el, fmt) {
+  const raw = el.value.trim();
+  if (!raw) return;
+  if (fmt === '$') {
+    const n = parseDollar(raw);
+    if (n) { el.value = fmtDollar(n); el.dispatchEvent(new Event('change')); }
+  } else if (fmt === '#') {
+    const n = parseNum(raw);
+    if (n) { el.value = fmtNum(n); el.dispatchEvent(new Event('change')); }
+  }
 }
 
 function calcDisplay(val, fmt) {
@@ -676,10 +705,10 @@ function renderBookings() {
     const signedItp = plan ? signed / plan : null;
     return `<tr>
       <td class="label">${label}</td>
-      <td class="num">${editInput('bk',rk,'pw_plan',{placeholder:'$0',prefill:fmtDollar(planVal)})}</td>
-      <td class="num">${editInput('bk',rk,'pw_billed',{placeholder:'$0',prefill:fmtDollar(billedVal)})}</td>
-      <td class="num">${editInput('bk',rk,'pw_signed',{placeholder:'$0'})}</td>
-      <td class="num">${editInput('bk',rk,'pw_commit',{placeholder:'$0'})}</td>
+      <td class="num">${editInput('bk',rk,'pw_plan',{placeholder:'$0',prefill:fmtDollar(planVal),fmt:'$'})}</td>
+      <td class="num">${editInput('bk',rk,'pw_billed',{placeholder:'$0',prefill:fmtDollar(billedVal),fmt:'$'})}</td>
+      <td class="num">${editInput('bk',rk,'pw_signed',{placeholder:'$0',fmt:'$'})}</td>
+      <td class="num">${editInput('bk',rk,'pw_commit',{placeholder:'$0',fmt:'$'})}</td>
       <td class="num">${calcDisplay(billedItp,'%')}</td>
       <td class="num">${calcDisplay(itf,'%')}</td>
       <td class="num">${calcDisplay(signedItp,'%')}</td>
@@ -727,10 +756,10 @@ function renderBookings() {
       <tr style="height:6px"><td colspan="8"></td></tr>
       <tr>
         <td class="label">IES Contracts</td>
-        <td class="num">${editInput('ct','ies','pw_plan',{placeholder:'0',prefill:fmtNum(ctPwPlanVal)})}</td>
-        <td class="num">${editInput('ct','ies','pw_billed',{placeholder:'0',prefill:fmtNum(ctPwBilledVal)})}</td>
-        <td class="num">${editInput('ct','ies','pw_signed',{placeholder:'0'})}</td>
-        <td class="num">${editInput('ct','ies','pw_commit',{placeholder:'0'})}</td>
+        <td class="num">${editInput('ct','ies','pw_plan',{placeholder:'0',prefill:fmtNum(ctPwPlanVal),fmt:'#'})}</td>
+        <td class="num">${editInput('ct','ies','pw_billed',{placeholder:'0',prefill:fmtNum(ctPwBilledVal),fmt:'#'})}</td>
+        <td class="num">${editInput('ct','ies','pw_signed',{placeholder:'0',fmt:'#'})}</td>
+        <td class="num">${editInput('ct','ies','pw_commit',{placeholder:'0',fmt:'#'})}</td>
         <td class="num">${calcDisplay(ctPwBilledItp,'%')}</td>
         <td class="num">${calcDisplay(ctPwItf,'%')}</td>
         <td class="num">${calcDisplay(ctPwSignedItp,'%')}</td>
@@ -752,14 +781,14 @@ function renderBookings() {
       lowCell = sumDisplay('bk',rk,'tw_low','$');
     } else {
       commitVal = parseDollar(getEdit('bk',rk,'tw_commit'));
-      commitCell = editInput('bk',rk,'tw_commit',{placeholder:'$0',leader:true});
-      highCell = editInput('bk',rk,'tw_high',{placeholder:'$0',leader:true});
-      lowCell = editInput('bk',rk,'tw_low',{placeholder:'$0',leader:true});
+      commitCell = editInput('bk',rk,'tw_commit',{placeholder:'$0',leader:true,fmt:'$'});
+      highCell = editInput('bk',rk,'tw_high',{placeholder:'$0',leader:true,fmt:'$'});
+      lowCell = editInput('bk',rk,'tw_low',{placeholder:'$0',leader:true,fmt:'$'});
     }
     const itp = plan ? commitVal / plan : null;
     return `<tr>
       <td class="label">${label}</td>
-      <td class="num">${editInput('bk',rk,'tw_plan',{placeholder:'$0',prefill:fmtDollar(planVal)})}</td>
+      <td class="num">${editInput('bk',rk,'tw_plan',{placeholder:'$0',prefill:fmtDollar(planVal),fmt:'$'})}</td>
       <td class="num">${commitCell}</td>
       <td class="num">${highCell}</td>
       <td class="num">${lowCell}</td>
@@ -778,9 +807,9 @@ function renderBookings() {
     ctTwLowCell = sumDisplay('ct','ies','tw_low','#',parseNum);
   } else {
     ctTwCommitVal = parseNum(getEdit('ct','ies','tw_commit'));
-    ctTwCommitCell = editInput('ct','ies','tw_commit',{placeholder:'0',leader:true});
-    ctTwHighCell = editInput('ct','ies','tw_high',{placeholder:'0',leader:true});
-    ctTwLowCell = editInput('ct','ies','tw_low',{placeholder:'0',leader:true});
+    ctTwCommitCell = editInput('ct','ies','tw_commit',{placeholder:'0',leader:true,fmt:'#'});
+    ctTwHighCell = editInput('ct','ies','tw_high',{placeholder:'0',leader:true,fmt:'#'});
+    ctTwLowCell = editInput('ct','ies','tw_low',{placeholder:'0',leader:true,fmt:'#'});
   }
   const ctTwItp = ctTwPlan ? ctTwCommitVal / ctTwPlan : null;
 
@@ -822,7 +851,7 @@ function renderBookings() {
       <tr style="height:6px"><td colspan="6"></td></tr>
       <tr>
         <td class="label">IES Contracts</td>
-        <td class="num">${editInput('ct','ies','tw_plan',{placeholder:'0',prefill:fmtNum(ctTwPlanVal)})}</td>
+        <td class="num">${editInput('ct','ies','tw_plan',{placeholder:'0',prefill:fmtNum(ctTwPlanVal),fmt:'#'})}</td>
         <td class="num">${ctTwCommitCell}</td>
         <td class="num">${ctTwHighCell}</td>
         <td class="num">${ctTwLowCell}</td>
@@ -852,9 +881,9 @@ function renderBookings() {
       commitVal = parse(getEdit('bk',rk,'q3_commit'));
       highVal = parse(getEdit('bk',rk,'q3_high'));
       lowVal = parse(getEdit('bk',rk,'q3_low'));
-      commitCell = editInput('bk',rk,'q3_commit',{placeholder: fmt?'$0':'0',leader:true});
-      highCell = editInput('bk',rk,'q3_high',{placeholder: fmt?'$0':'0',leader:true});
-      lowCell = editInput('bk',rk,'q3_low',{placeholder: fmt?'$0':'0',leader:true});
+      commitCell = editInput('bk',rk,'q3_commit',{placeholder: fmt?'$0':'0',leader:true,fmt:fmtCode});
+      highCell = editInput('bk',rk,'q3_high',{placeholder: fmt?'$0':'0',leader:true,fmt:fmtCode});
+      lowCell = editInput('bk',rk,'q3_low',{placeholder: fmt?'$0':'0',leader:true,fmt:fmtCode});
     }
     const billedItp = plan ? actuals / plan : null;
     const commitItp = plan ? commitVal / plan : null;
@@ -864,9 +893,9 @@ function renderBookings() {
     const remCommit = commitVal - actuals;
     return `<tr>
       <td class="label">${label}</td>
-      <td class="num">${editInput('bk',rk,'q3_plan',{placeholder: fmt?'$0':'0',prefill:fmtFn(planVal)})}</td>
-      <td class="num">${editInput('bk',rk,'q3_actuals',{placeholder: fmt?'$0':'0',prefill:fmtFn(actualsVal)})}</td>
-      <td class="num">${editInput('bk',rk,'q3_signed',{placeholder: fmt?'$0':'0'})}</td>
+      <td class="num">${editInput('bk',rk,'q3_plan',{placeholder: fmt?'$0':'0',prefill:fmtFn(planVal),fmt:fmtCode})}</td>
+      <td class="num">${editInput('bk',rk,'q3_actuals',{placeholder: fmt?'$0':'0',prefill:fmtFn(actualsVal),fmt:fmtCode})}</td>
+      <td class="num">${editInput('bk',rk,'q3_signed',{placeholder: fmt?'$0':'0',fmt:fmtCode})}</td>
       <td class="num">${commitCell}</td>
       <td class="num">${highCell}</td>
       <td class="num">${lowCell}</td>
@@ -945,9 +974,9 @@ function renderBookings() {
           lowCell = sumDisplay('ct','ies','q3_low','#',parseNum);
         } else {
           commitVal = parseNum(getEdit('ct','ies','q3_commit'));
-          commitCell = editInput('ct','ies','q3_commit',{placeholder:'0',leader:true});
-          highCell = editInput('ct','ies','q3_high',{placeholder:'0',leader:true});
-          lowCell = editInput('ct','ies','q3_low',{placeholder:'0',leader:true});
+          commitCell = editInput('ct','ies','q3_commit',{placeholder:'0',leader:true,fmt:'#'});
+          highCell = editInput('ct','ies','q3_high',{placeholder:'0',leader:true,fmt:'#'});
+          lowCell = editInput('ct','ies','q3_low',{placeholder:'0',leader:true,fmt:'#'});
         }
         const billedItp = plan ? actuals / plan : null;
         const commitItp = plan ? commitVal / plan : null;
@@ -957,9 +986,9 @@ function renderBookings() {
         const remCommit = commitVal - actuals;
         return '<tr>' +
           '<td class="label">IES Contracts</td>' +
-          '<td class="num">'+editInput('ct','ies','q3_plan',{placeholder:'0',prefill:fmtNum(ctQ3PlanVal)})+'</td>' +
-          '<td class="num">'+editInput('ct','ies','q3_actuals',{placeholder:'0',prefill:fmtNum(ctQ3ActVal)})+'</td>' +
-          '<td class="num">'+editInput('ct','ies','q3_signed',{placeholder:'0'})+'</td>' +
+          '<td class="num">'+editInput('ct','ies','q3_plan',{placeholder:'0',prefill:fmtNum(ctQ3PlanVal),fmt:'#'})+'</td>' +
+          '<td class="num">'+editInput('ct','ies','q3_actuals',{placeholder:'0',prefill:fmtNum(ctQ3ActVal),fmt:'#'})+'</td>' +
+          '<td class="num">'+editInput('ct','ies','q3_signed',{placeholder:'0',fmt:'#'})+'</td>' +
           '<td class="num">'+commitCell+'</td>' +
           '<td class="num">'+highCell+'</td>' +
           '<td class="num">'+lowCell+'</td>' +
@@ -984,7 +1013,7 @@ function renderAPRC() {
   function aprcRow(label, key, section) {
     return `<tr>
       <td class="label">${label}</td>
-      <td class="num">${editInput('aprc',key,section+'_actual',{placeholder:'$0'})}</td>
+      <td class="num">${editInput('aprc',key,section+'_actual',{placeholder:'$0',fmt:'$'})}</td>
       <td class="num">${editInput('aprc',key,section+'_change',{placeholder:'0%'})}</td>
     </tr>`;
   }
@@ -1060,8 +1089,8 @@ function renderPipeline() {
     }
     return `<tr>
       <td class="label">${label}</td>
-      <td class="num">${editInput('pipe',key,section+'_pipe',{placeholder:'$0'})}</td>
-      <td class="num">${editInput('pipe',key,section+'_opps',{placeholder:'0'})}</td>
+      <td class="num">${editInput('pipe',key,section+'_pipe',{placeholder:'$0',fmt:'$'})}</td>
+      <td class="num">${editInput('pipe',key,section+'_opps',{placeholder:'0',fmt:'#'})}</td>
       <td class="num">${editInput('pipe',key,section+'_commit',{placeholder:'%',leader:isLeader})}</td>
       <td class="num">${editInput('pipe',key,section+'_upside',{placeholder:'%',leader:isLeader})}</td>
     </tr>`;
@@ -1105,8 +1134,8 @@ function renderPipeline() {
     }
     return `<tr>
       <td class="label">${label}</td>
-      <td class="num">${editInput('pipesize',key,section+'_pipe',{placeholder:'$0'})}</td>
-      <td class="num">${editInput('pipesize',key,section+'_opps',{placeholder:'0'})}</td>
+      <td class="num">${editInput('pipesize',key,section+'_pipe',{placeholder:'$0',fmt:'$'})}</td>
+      <td class="num">${editInput('pipesize',key,section+'_opps',{placeholder:'0',fmt:'#'})}</td>
       <td class="num">${editInput('pipesize',key,section+'_commit',{placeholder:'%',leader:isLeader})}</td>
       <td class="num">${editInput('pipesize',key,section+'_upside',{placeholder:'%',leader:isLeader})}</td>
     </tr>`;
