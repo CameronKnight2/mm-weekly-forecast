@@ -1051,12 +1051,12 @@ function renderPipeline() {
   const stages = ['Solution','Propose','Commit','Total'];
   const sizes = ['$1-10k','$10-25k','$25k-$50k','$50k+','Total'];
 
-  function pipeRow(label, key, section, isTotalRow) {
+  function pipeRow(label, key, section, isTotalRow, showPct) {
     const isLeader = (section === 'tw' || section === 'q3');
     const isDivTotal = DIVISION === 'Total';
 
     if (isDivTotal) {
-      let pipeVal, oppsVal, commitCell, upsideCell;
+      let pipeVal, oppsVal;
       if (isTotalRow) {
         pipeVal = stages.slice(0,-1).reduce((s,st) => s + sumPipeField('pipe',st.toLowerCase(),section+'_pipe'), 0);
         oppsVal = stages.slice(0,-1).reduce((s,st) => s + sumPipeField('pipe',st.toLowerCase(),section+'_opps',parseNum), 0);
@@ -1064,44 +1064,42 @@ function renderPipeline() {
         pipeVal = sumPipeField('pipe',key,section+'_pipe');
         oppsVal = sumPipeField('pipe',key,section+'_opps',parseNum);
       }
-      commitCell = avgDisplay('pipe',key,section+'_commit');
-      upsideCell = avgDisplay('pipe',key,section+'_upside');
       const cls = isTotalRow ? ' class="total-row"' : '';
-      return `<tr${cls}>
+      let row = `<tr${cls}>
         <td class="label">${label}</td>
         <td class="num">${calcDisplay(pipeVal,'$')}</td>
-        <td class="num">${calcDisplay(oppsVal,'#')}</td>
-        <td class="num">${commitCell}</td>
-        <td class="num">${upsideCell}</td>
-      </tr>`;
+        <td class="num">${calcDisplay(oppsVal,'#')}</td>`;
+      if (showPct) row += `<td class="num">${avgDisplay('pipe',key,section+'_commit')}</td>
+        <td class="num">${avgDisplay('pipe',key,section+'_upside')}</td>`;
+      return row + `</tr>`;
     }
 
     if (isTotalRow) {
       const pipe = stages.slice(0,-1).reduce((s,st) => s + parseDollar(getEdit('pipe',st.toLowerCase(),section+'_pipe')), 0);
       const opps = stages.slice(0,-1).reduce((s,st) => s + parseNum(getEdit('pipe',st.toLowerCase(),section+'_opps')), 0);
-      return `<tr class="total-row">
+      let row = `<tr class="total-row">
         <td class="label">${label}</td>
         <td class="num">${calcDisplay(pipe,'$')}</td>
-        <td class="num">${calcDisplay(opps,'#')}</td>
-        <td class="num">${editInput('pipe',key,section+'_commit',{placeholder:'%',leader:isLeader})}</td>
-        <td class="num">${editInput('pipe',key,section+'_upside',{placeholder:'%',leader:isLeader})}</td>
-      </tr>`;
+        <td class="num">${calcDisplay(opps,'#')}</td>`;
+      if (showPct) row += `<td class="num">${editInput('pipe',key,section+'_commit',{placeholder:'%',leader:isLeader})}</td>
+        <td class="num">${editInput('pipe',key,section+'_upside',{placeholder:'%',leader:isLeader})}</td>`;
+      return row + `</tr>`;
     }
-    return `<tr>
+    let row = `<tr>
       <td class="label">${label}</td>
       <td class="num">${editInput('pipe',key,section+'_pipe',{placeholder:'$0',fmt:'$'})}</td>
-      <td class="num">${editInput('pipe',key,section+'_opps',{placeholder:'0',fmt:'#'})}</td>
-      <td class="num">${editInput('pipe',key,section+'_commit',{placeholder:'%',leader:isLeader})}</td>
-      <td class="num">${editInput('pipe',key,section+'_upside',{placeholder:'%',leader:isLeader})}</td>
-    </tr>`;
+      <td class="num">${editInput('pipe',key,section+'_opps',{placeholder:'0',fmt:'#'})}</td>`;
+    if (showPct) row += `<td class="num">${editInput('pipe',key,section+'_commit',{placeholder:'%',leader:isLeader})}</td>
+      <td class="num">${editInput('pipe',key,section+'_upside',{placeholder:'%',leader:isLeader})}</td>`;
+    return row + `</tr>`;
   }
 
-  function sizeRow(label, key, section, isTotalRow) {
+  function sizeRow(label, key, section, isTotalRow, showPct) {
     const isLeader = (section === 'tw' || section === 'q3');
     const isDivTotal = DIVISION === 'Total';
 
     if (isDivTotal) {
-      let pipeVal, oppsVal, commitCell, upsideCell;
+      let pipeVal, oppsVal;
       if (isTotalRow) {
         pipeVal = sizes.slice(0,-1).reduce((s,sz) => s + sumPipeField('pipesize',sz.replace(/[$, +k]/g,'').toLowerCase(),section+'_pipe'), 0);
         oppsVal = sizes.slice(0,-1).reduce((s,sz) => s + sumPipeField('pipesize',sz.replace(/[$, +k]/g,'').toLowerCase(),section+'_opps',parseNum), 0);
@@ -1109,57 +1107,60 @@ function renderPipeline() {
         pipeVal = sumPipeField('pipesize',key,section+'_pipe');
         oppsVal = sumPipeField('pipesize',key,section+'_opps',parseNum);
       }
-      commitCell = avgDisplay('pipesize',key,section+'_commit');
-      upsideCell = avgDisplay('pipesize',key,section+'_upside');
       const cls = isTotalRow ? ' class="total-row"' : '';
-      return `<tr${cls}>
+      let row = `<tr${cls}>
         <td class="label">${label}</td>
         <td class="num">${calcDisplay(pipeVal,'$')}</td>
-        <td class="num">${calcDisplay(oppsVal,'#')}</td>
-        <td class="num">${commitCell}</td>
-        <td class="num">${upsideCell}</td>
-      </tr>`;
+        <td class="num">${calcDisplay(oppsVal,'#')}</td>`;
+      if (showPct) row += `<td class="num">${avgDisplay('pipesize',key,section+'_commit')}</td>
+        <td class="num">${avgDisplay('pipesize',key,section+'_upside')}</td>`;
+      return row + `</tr>`;
     }
 
     if (isTotalRow) {
       const pipe = sizes.slice(0,-1).reduce((s,sz) => s + parseDollar(getEdit('pipesize',sz.replace(/[$ +k]/g,'').toLowerCase(),section+'_pipe')), 0);
       const opps = sizes.slice(0,-1).reduce((s,sz) => s + parseNum(getEdit('pipesize',sz.replace(/[$ +k]/g,'').toLowerCase(),section+'_opps')), 0);
-      return `<tr class="total-row">
+      let row = `<tr class="total-row">
         <td class="label">${label}</td>
         <td class="num">${calcDisplay(pipe,'$')}</td>
-        <td class="num">${calcDisplay(opps,'#')}</td>
-        <td class="num">${editInput('pipesize',key,section+'_commit',{placeholder:'%',leader:isLeader})}</td>
-        <td class="num">${editInput('pipesize',key,section+'_upside',{placeholder:'%',leader:isLeader})}</td>
-      </tr>`;
+        <td class="num">${calcDisplay(opps,'#')}</td>`;
+      if (showPct) row += `<td class="num">${editInput('pipesize',key,section+'_commit',{placeholder:'%',leader:isLeader})}</td>
+        <td class="num">${editInput('pipesize',key,section+'_upside',{placeholder:'%',leader:isLeader})}</td>`;
+      return row + `</tr>`;
     }
-    return `<tr>
+    let row = `<tr>
       <td class="label">${label}</td>
       <td class="num">${editInput('pipesize',key,section+'_pipe',{placeholder:'$0',fmt:'$'})}</td>
-      <td class="num">${editInput('pipesize',key,section+'_opps',{placeholder:'0',fmt:'#'})}</td>
-      <td class="num">${editInput('pipesize',key,section+'_commit',{placeholder:'%',leader:isLeader})}</td>
-      <td class="num">${editInput('pipesize',key,section+'_upside',{placeholder:'%',leader:isLeader})}</td>
-    </tr>`;
+      <td class="num">${editInput('pipesize',key,section+'_opps',{placeholder:'0',fmt:'#'})}</td>`;
+    if (showPct) row += `<td class="num">${editInput('pipesize',key,section+'_commit',{placeholder:'%',leader:isLeader})}</td>
+      <td class="num">${editInput('pipesize',key,section+'_upside',{placeholder:'%',leader:isLeader})}</td>`;
+    return row + `</tr>`;
   }
 
   function pipeCard(title, section, showCreated) {
+    const showPct = section !== 'pw';
+    const pctHeaders = showPct ? '<th class="num">Commit %</th><th class="num">Upside %</th>' : '';
     let html = `<div class="card"><div class="card-header">${title} — By Stage</div>
-      <table class="ftable"><thead><tr><th>Stage</th><th class="num">Pipeline</th><th class="num">Opps</th><th class="num">Commit %</th><th class="num">Upside %</th></tr></thead><tbody>
-        ${stages.map(s => pipeRow(s, s.toLowerCase(), section, s==='Total')).join('')}
+      <table class="ftable"><thead><tr><th>Stage</th><th class="num">Pipeline</th><th class="num">Opps</th>${pctHeaders}</tr></thead><tbody>
+        ${stages.map(s => pipeRow(s, s.toLowerCase(), section, s==='Total', showPct)).join('')}
       </tbody></table>
       <div class="card-header" style="margin-top:2px">By Deal Size</div>
-      <table class="ftable"><thead><tr><th>Size</th><th class="num">Pipeline</th><th class="num">Opps</th><th class="num">Commit %</th><th class="num">Upside %</th></tr></thead><tbody>
+      <table class="ftable"><thead><tr><th>Size</th><th class="num">Pipeline</th><th class="num">Opps</th>${pctHeaders}</tr></thead><tbody>
         ${sizes.map(s => {
           const k = s.replace(/[$, +k]/g,'').toLowerCase();
-          return sizeRow(s, k, section, s==='Total');
+          return sizeRow(s, k, section, s==='Total', showPct);
         }).join('')}
       </tbody></table>`;
     if (showCreated) {
+      const isPw = section === 'pw';
+      const createdHeaders = isPw ? '<th class="num">Pipeline</th>' : '<th class="num">Pipeline</th><th class="num">Per Week</th>';
+      const createdCells = isPw
+        ? `<td class="num">${editInput('pipecreated','total',section+'_pipe',{placeholder:'$0',fmt:'$'})}</td>`
+        : `<td class="num">${editInput('pipecreated','total',section+'_pipe',{placeholder:'$0',fmt:'$'})}</td>
+          <td class="num">${editInput('pipecreated','total',section+'_perweek',{placeholder:'$0',fmt:'$'})}</td>`;
       html += `<div class="card-header" style="margin-top:2px">Pipeline Created</div>
-      <table class="ftable"><thead><tr><th></th><th class="num">Pipeline</th><th class="num">Per Week</th></tr></thead><tbody>
-        <tr><td class="label">Total</td>
-          <td class="num">${editInput('pipecreated','total',section+'_pipe',{placeholder:'$0'})}</td>
-          <td class="num">${editInput('pipecreated','total',section+'_perweek',{placeholder:'$0'})}</td>
-        </tr>
+      <table class="ftable"><thead><tr><th></th>${createdHeaders}</tr></thead><tbody>
+        <tr><td class="label">Total</td>${createdCells}</tr>
       </tbody></table>`;
     }
     return html + `</div>`;
